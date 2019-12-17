@@ -37,9 +37,9 @@ https://github.com/optimizely/token-service and expose 3 APIs.
     }
 ```
 
-    Once called the X-Castle-Signature header will be checked. If the signature is not correct message processing will
-    stop. If the signature is correct the API version will be checked. If it is correct the user.zip will be downloaded
-    and saved in a bucket. The user.zip is what is returned when callers perform a POST to /user/<email>.
+Once called the X-Castle-Signature header will be checked. If the signature is not correct message processing will
+stop. If the signature is correct the API version will be checked. If it is correct the user.zip will be downloaded
+and saved in a bucket. The user.zip is what is returned when callers perform a POST to /user/<email>.
 
 The caller is the castle gdpr automation inside https://github.com/optimizely/hermes-airflow. It will have to be updated to
 call the service APIs above.
