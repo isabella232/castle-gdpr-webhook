@@ -1,6 +1,6 @@
 # Castle GDPR Webhook
 
-This webhook helps automate Castle GDPR requests. It works as follows.
+This webhook helps automate Castle GDPR requests.
 
 ## Overview
 
@@ -14,6 +14,9 @@ https://github.com/optimizely/token-service and expose 3 APIs.
 - POST /user/\<email\> - This will cause the user_id to be looked up in the datastore. If a user is found a request to
     access the user records will be issued to the castle API. If a user is found and data is stored in a bucket for the
     user the data (user.zip) will be returned to the caller.
+
+The caller of these to endpoints is the castle gdpr automation inside https://github.com/optimizely/hermes-airflow. It
+will have to be updated to call the service APIs above.
 
 - POST /callback - This is a webhook path that will be registered with Castle.io. It will accept webhooks with the
     following content which was defined by Castle.
@@ -37,12 +40,11 @@ https://github.com/optimizely/token-service and expose 3 APIs.
     }
 ```
 
+For additional information see the PDF from castle in this repository.
+
 Once called the X-Castle-Signature header will be checked. If the signature is not correct message processing will
 stop. If the signature is correct the API version will be checked. If it is correct the user.zip will be downloaded
-and saved in a bucket. The user.zip is what is returned when callers perform a POST to /user/<email>.
-
-The caller is the castle gdpr automation inside https://github.com/optimizely/hermes-airflow. It will have to be updated to
-call the service APIs above.
+and saved in a bucket. The user.zip is what is returned when hermes-airflow perform a POST to /user/\<email\>.
 
 ## Configuration
 
@@ -52,10 +54,10 @@ The authentication header secret must be available in an environment variable.
 
 ## Authentication
 
-The callers will be expected to have set an HTTP secret header named X-Castle-Webhook containing the aforementioned
-secret.
+The Castle GDPR callers will be expected to have set an HTTP secret header named X-Castle-Webhook containing the
+aforementioned secret.
 
-The only caller of this server will be the Optimizely GDPR automation in hermes-airflow.
+The only caller of the /user endpoints will be the Optimizely GDPR automation in hermes-airflow.
 
 ## Additional TODOs
 
