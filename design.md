@@ -44,8 +44,6 @@ and saved in a bucket. The user.zip is what is returned when callers perform a P
 The caller is the castle gdpr automation inside https://github.com/optimizely/hermes-airflow. It will have to be updated to
 call the service APIs above.
 
-## The
-
 ## Configuration
 
 The Castle API secret will need to be available in an environment variable.
