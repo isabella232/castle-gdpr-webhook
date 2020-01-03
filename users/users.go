@@ -1,139 +1,50 @@
 package main
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
+	"encoding/base64"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-lambda-go/lambdacontext"
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"log"
-	"strings"
+	"net/http"
 )
 
-type MyEvent struct {
-	Name string `json:"name"`
-}
+var region = aws.String("us-west-2")
+var bucket = aws.String("castle-gdpr-user-data")
 
-type MyResponse struct {
-	Message string `json:"Answer:"`
-}
-
-// BodyRequest is our self-made struct to process JSON request from Client
-type BodyRequest struct {
-	RequestName string `json:"name"`
-}
-
-// BodyResponse is our self-made struct to build response for Client
-type BodyResponse struct {
-	ResponseName string `json:"name"`
-}
-
-// Handler function Using AWS Lambda Proxy Request
-// from https://github.com/serverless/examples/blob/master/aws-golang-http-get-post/postFolder/postExample.go
-func ServerlessCallback(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-
-	// BodyRequest will be used to take the json response from client and build it
-	bodyRequest := BodyRequest{
-		RequestName: "",
+// sends a request for castle for the GDPR information for the specified uniqueId
+func requestGdprInfoFromCastle(uniqueId string) {
+	if len(uniqueId) == 0 {
+		log.Printf("requestGdprInfoFromCastle called with empty string")
+		return
 	}
 
-	// Unmarshal the json, return 404 if error
-	err := json.Unmarshal([]byte(request.Body), &bodyRequest)
+	requestUrl := "https://api.castle.io/v1/privacy/users/"
+	req, err := http.NewRequest("POST", requestUrl, nil)
 	if err != nil {
-		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 404}, nil
+		// handle err
 	}
+	req.SetBasicAuth("", "secretsauce")
+	req.Header.Set("Content-Type", "application/json")
 
-	// We will build the BodyResponse and send it back in json form
-	bodyResponse := BodyResponse{
-		ResponseName: bodyRequest.RequestName + " LastName",
-	}
-
-	// Marshal the response into json bytes, if error return 404
-	response, err := json.Marshal(&bodyResponse)
+	log.Printf("Requesting info for %s from castle\n", uniqueId)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 404}, nil
+		log.Printf(err.Error())
 	}
+	log.Printf("Castle response: %v\n", resp)
+	defer resp.Body.Close()
 
-	//Returning response with AWS Lambda Proxy Response
-	return events.APIGatewayProxyResponse{Body: string(response), StatusCode: 200}, nil
 }
 
-// Handler function Using AWS Lambda Proxy Request
-// https://github.com/serverless/examples/blob/master/aws-golang-http-get-post/getFolder/getExample.go
-func ServerlessGetHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-
-	//Get the path parameter that was sent
-	//name := request.PathParameters["name"]
-	name := request.Path
-
-	//Generate message that want to be sent as body
-	message := fmt.Sprintf(" { \"Message\" : \"Hello %s \" } ", name)
-
-	//Returning response with AWS Lambda Proxy Response
-	return events.APIGatewayProxyResponse{Body: message, StatusCode: 200}, nil
-}
-
-func HandleCallback(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	message := fmt.Sprintf(" { \"Message\" : \"Not Yet Implemented\" } ")
-	return events.APIGatewayProxyResponse{Body: message, StatusCode: 200}, nil
-}
-
-//var userRequest = regex.MustCompile(`/users/[^/]+/`)
-
-func printMap(m map[string]string) {
-	var maxLenKey int
-	for k, _ := range m {
-		if len(k) > maxLenKey {
-			maxLenKey = len(k)
-		}
-	}
-
-	for k, v := range m {
-		log.Println(k + ": " + strings.Repeat(" ", maxLenKey-len(k)) + v)
-	}
-}
-
-func HandleUserRequest(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	log.Printf("Got request for path: %s\n", request.Path, request.PathParameters)
-	log.Printf("Path paramters: %#v\n", request.PathParameters)
-	log.Printf("Querystring paramters: %#v\n", request.QueryStringParameters)
-	log.Printf("Name paramter: %s\n", request.QueryStringParameters["name"])
-	// pretty print the fucking map
-	printMap(request.QueryStringParameters)
-
-	if request.Path[0] != '/' {
-		log.Printf("Invalid request path: %s", request.Path)
-		return events.APIGatewayProxyResponse{Body: "invalid request path", StatusCode: 400}, nil
-	}
-
-	if S3FileExists(name) == true {
-		log.Printf("%s does exists returning data\n", name)
-
-	} else {
-		log.Printf("%s does not exist requesting data from castle\n", name)
-
-		file := DownloadFile(name)
-		// base64 encode it
-		encodedFile := b64.StdEncoding.EncodeToString(file)
-
-		// Delete the file
-		DeleteFile(name)
-
-		// return the file
-		return encodedFile
-	}
-	filename := strings.SplitAfter(request.Path, "/")[1] + ".txt"
-	log.Printf("Attempting to download filename: %s from s3", filename)
-
-	// download the file and base64 encode it, then set it to the body.
-	// https://stackoverflow.com/questions/35804042/aws-api-gateway-and-lambda-to-return-image
+// downloads the file from S3. returns the bytes in the file or an error
+func download(filename string) ([]byte, error) {
 	sess, _ := session.NewSession(&aws.Config{
-		Region: aws.String("us-west-2")},
+		Region: region},
 	)
 
 	downloader := s3manager.NewDownloader(sess)
@@ -141,61 +52,102 @@ func HandleUserRequest(request events.APIGatewayProxyRequest) (events.APIGateway
 
 	numBytes, err := downloader.Download(buff,
 		&s3.GetObjectInput{
-			Bucket: aws.String("castle-gdpr-user-data"),
-			Key:    aws.String("test.txt"),
+			Bucket: bucket,
+			Key:    aws.String(filename),
 		})
 	if err != nil {
-		log.Printf("Unable to download item %q, %v", "test.txt", err)
-		return events.APIGatewayProxyResponse{Body: "unable to download file", StatusCode: 400}, nil
+		log.Printf("Unable to download item %q, %v", filename, err)
+		return nil, err
 	}
 
-	log.Printf("Downloaded %s bytes\n", numBytes)
+	log.Printf("Downloaded %d bytes\n", numBytes)
 
-	data := buff.Bytes() // now data is my []byte array
-
-	// delete the file
-
-	return events.APIGatewayProxyResponse{Body: string(data), StatusCode: 200}, nil
+	return buff.Bytes(), nil
 }
 
-func HandleAllRequests(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	//name := request.PathParameters["name"]
-	switch path := request.Path; path {
-	case "/callback":
-		return HandleCallback(request)
-	default:
-		log.Printf("No such route: %s", path)
-		message := fmt.Sprintf("{ \"Message\" : \"No such route %s\" }", path)
-		return events.APIGatewayProxyResponse{Body: message, StatusCode: 404}, nil
+func doess3FileExist(filename string) bool {
+	rv := true
+
+	sess, _ := session.NewSession(&aws.Config{
+		Region: region},
+	)
+
+	downloader := s3manager.NewDownloader(sess)
+	buff := &aws.WriteAtBuffer{}
+
+	_, err := downloader.Download(buff,
+		&s3.GetObjectInput{
+			Bucket: bucket,
+			Key:    aws.String(filename),
+		})
+	if err != nil {
+		// if any errors are reported the file is not able to be downloaded
+		rv = false
 	}
-	return events.APIGatewayProxyResponse{Body: "...", StatusCode: 404}, nil
+	return rv
 }
 
-func HandleCallbackOrg(ctx context.Context, name MyEvent) (MyResponse, error) {
-	lc, _ := lambdacontext.FromContext(ctx)
-	log.Print(lc.Identity.CognitoIdentityPoolID)
-	log.Print(lc)
-	return MyResponse{Message: fmt.Sprintf("Hello %s, context: %+v!", name.Name, lc)}, nil
-	//return MyResponse{Message: fmt.Sprintf("Weewaa %s!", name.Name)}, nil
+// deletes the file from s3
+func deleteFile(bucket, filename string) error {
+	sess, _ := session.NewSession(&aws.Config{
+		Region: region},
+	)
+	svc := s3.New(sess)
+	input := &s3.DeleteObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(filename),
+	}
 
+	_, err := svc.DeleteObject(input)
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			default:
+				log.Println(aerr.Error())
+			}
+		} else {
+			log.Println(err.Error())
+		}
+	}
+	log.Printf("deleted file: %s\n", filename)
+	return err
 }
 
-/*
+// handles the request for gdpr data
+func HandleUserRequest(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	log.Printf("HandleUserRequest for path: %s\n", request.Path)
 
-func HandleRequest(ctx context.Context, name MyEvent) (MyResponse, error) {
-	lc, _ := lambdacontext.FromContext(ctx)
-	log.Print(lc.Identity.CognitoIdentityPoolID)
-	log.Print(lc)
-	//return MyResponse{Message: fmt.Sprintf("Hello %s, %+v!", name.Name, lc)}, nil
-	return MyResponse{Message: fmt.Sprintf("Weewaa %s!", name.Name)}, nil}
+	uniqueId := request.QueryStringParameters["unique_id"]
+	if len(uniqueId) == 0 {
+		log.Printf("HandleUserRequest called with no unique_id parameter\n")
+		return events.APIGatewayProxyResponse{Body: "Bad Request", StatusCode: 400}, nil
+	}
+
+	filename := uniqueId + ".zip"
+
+	if doess3FileExist(filename) == true {
+		log.Printf("%s does exists returning data\n", filename)
+
+		file, err := download(filename)
+		if err != nil {
+			log.Printf("Error downloading filename: %s from s3: %v\n", filename, err)
+			return events.APIGatewayProxyResponse{Body: "Internal Error", StatusCode: 500}, nil
+		}
+
+		// base64 encode it
+		encodedFile := base64.StdEncoding.EncodeToString(file)
+
+		deleteFile(*bucket, filename)
+
+		// return the file
+		return events.APIGatewayProxyResponse{Body: encodedFile, StatusCode: 200}, nil
+	} else {
+		log.Printf("%s does not exist requesting data from castle\n", filename)
+		requestGdprInfoFromCastle(uniqueId)
+		return events.APIGatewayProxyResponse{Body: "", StatusCode: 204}, nil
+	}
 }
-*/
 
 func main() {
-	//lambda.Start(HandleRequest)
-	//lambda.Start(HandleCallback)
-	//lambda.Start(ServerlessGetHandler)
-	//lambda.Start(ServerlessCallback)
-	//lambda.Start(HandleAllRequests)
 	lambda.Start(HandleUserRequest)
 }
