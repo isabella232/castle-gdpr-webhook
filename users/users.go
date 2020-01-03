@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/base64"
+	//"encoding/json"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
@@ -113,10 +114,20 @@ func deleteFile(bucket, filename string) error {
 	return err
 }
 
+// handles the content posted by castle, typically to /callback
+func HandleCallback(webhookContent string) {
+	if len(webhookContent) == 0 {
+		log.Printf("HandleCallback called with no content, exiting.")
+		return
+	}
+
+	//	json.Unmarshal
+
+	// download the file
+}
+
 // handles the request for gdpr data
 func HandleUserRequest(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	log.Printf("HandleUserRequest for path: %s\n", request.Path)
-
 	uniqueId := request.QueryStringParameters["unique_id"]
 	if len(uniqueId) == 0 {
 		log.Printf("HandleUserRequest called with no unique_id parameter\n")
@@ -146,6 +157,23 @@ func HandleUserRequest(request events.APIGatewayProxyRequest) (events.APIGateway
 		requestGdprInfoFromCastle(uniqueId)
 		return events.APIGatewayProxyResponse{Body: "", StatusCode: 204}, nil
 	}
+}
+
+func HandleAllRequests(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
+	log.Printf("HandleAllRequests called with path: %s\n", request.Path)
+
+	// TODO authenticate the requests
+
+	// very complex url routing
+	if request.Path == "/users" {
+		return HandleUserRequest(request)
+	} else if request.Path == "/" {
+		HandleCallback(request.Body)
+		return events.APIGatewayProxyResponse{Body: "", StatusCode: 204}, nil
+	} else {
+		log.Printf("called with unknown path: %s\n", request.Path)
+	}
+	return events.APIGatewayProxyResponse{Body: "", StatusCode: 200}, nil
 }
 
 func main() {
