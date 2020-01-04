@@ -1,7 +1,11 @@
 package main
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	/*
 		"log"
@@ -48,6 +52,65 @@ var validJson = `
 	}
 }
 `
+
+// verifies the webhook by computing the HMAC SHA256 signature of the payload
+// message and key are both string however messageMAC is a base64 encoded string
+// see castle docs for explanation
+func verifyWebhookMAC(message, messageMAC, key string) bool {
+	mac := hmac.New(sha256.New, []byte(key))
+	mac.Write([]byte(message))
+	expectedMAC := mac.Sum(nil)
+
+	// the messageMAC is base64 encoded to we have to decode itours as well
+	messageMACbytes, err := base64.StdEncoding.DecodeString(messageMAC)
+	if err != nil {
+		fmt.Println("error:", err)
+		return false
+	}
+	fmt.Printf("HMac of %sexpected: %s computed: %s\n", message, string(expectedMAC), string(messageMACbytes))
+	return hmac.Equal(messageMACbytes, expectedMAC)
+}
+
+// processes the incoming webhook data, checks the signature and the api conforms to the expected format
+// is successful returns the url of the GDPR SAR
+func handleIncomingWebHookData(jsonString, castleSignature, key string) (string, error) {
+	if len(jsonString) == 0 {
+		return "", errors.New("lenght of jsonString is 0")
+	}
+	if len(castleSignature) == 0 {
+		return "", errors.New("castleSignature invalid")
+	}
+	if len(key) == 0 {
+		return "", errors.New("hmac key invalid")
+	}
+
+	// first check the signature
+	if verifyWebhookMAC(jsonString, castleSignature, key) == false {
+		return "", errors.New("hmac invalid")
+	}
+
+	b := []byte(jsonString)
+	var sar GdprSar
+	err := json.Unmarshal(b, &sar)
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Printf("%+v\n", sar)
+
+	if sar.ApiVersion != "v1" {
+		return "", errors.New("invalid API version: " + sar.ApiVersion)
+	}
+
+	if sar.Type != "$gdpr.subject_access_request.completed" {
+		return "", errors.New("invalid type: " + sar.Type)
+	}
+
+	if len(sar.Data.DownloadUrl) == 0 {
+		return "", errors.New("empty download url")
+	}
+	return sar.Data.DownloadUrl, nil
+}
 
 func main() {
 	b := []byte(validJson)
