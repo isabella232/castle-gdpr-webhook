@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/base64"
 	//"encoding/json"
+	"bytes"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
@@ -10,8 +11,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"io"
 	"log"
 	"net/http"
+	"os"
 )
 
 var region = aws.String("us-west-2")
@@ -114,8 +117,68 @@ func deleteFile(bucket, filename string) error {
 	return err
 }
 
+// downloads a url to file
+func DownloadFile(filepath, url string) (string, error) {
+
+	// Get the data
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	// Create the file
+	out, err := os.Create(filepath)
+	if err != nil {
+		return "", err
+	}
+	defer out.Close()
+
+	// Write the body to file
+	_, err = io.Copy(out, resp.Body)
+	return "", err
+}
+
+// uploads a file s3
+func UploadFileToS3(bucket, filename, localfile string) error {
+	sess, _ := session.NewSession(&aws.Config{
+		Region: region},
+	)
+	svc := s3.New(sess)
+
+	file, err := os.Open(localfile)
+	if err != nil {
+		// handle error
+		log.Printf("unable to open localfile: %s\n", localfile)
+	}
+	defer file.Close()
+	fileInfo, _ := file.Stat()
+	size := fileInfo.Size()
+	buffer := make([]byte, size) // read file content to buffer
+
+	file.Read(buffer)
+	fileBytes := bytes.NewReader(buffer)
+	fileType := http.DetectContentType(buffer)
+
+	// upload the file
+	params := &s3.PutObjectInput{
+		Bucket:        aws.String(bucket),
+		Key:           aws.String(filename),
+		Body:          fileBytes,
+		ContentLength: aws.Int64(size),
+		ContentType:   aws.String(fileType),
+	}
+	_, err = svc.PutObject(params)
+	if err != nil {
+		log.Printf("error uploading: %s, error: %s\n", localfile, err.Error())
+	}
+
+	return err
+}
+
 // handles the content posted by castle, typically to /callback
 func HandleCallback(webhookContent string) {
+
 	if len(webhookContent) == 0 {
 		log.Printf("HandleCallback called with no content, exiting.")
 		return
@@ -124,6 +187,11 @@ func HandleCallback(webhookContent string) {
 	//	json.Unmarshal
 
 	// download the file
+	//filename := path.Base(r.URL.Path)
+	//tmpfile, err := ioutil.TempFile("/tmp", "castlegdpr.*.zip")
+	//err := DownloadFile(tmpfile, "https://miro.medium.com/max/5472/1*iyIXvY2VZ2ariY9k2z1dzw.jpeg")
+
+	// upload the file
 }
 
 // handles the request for gdpr data
