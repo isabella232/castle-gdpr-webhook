@@ -62,7 +62,7 @@ func HandleIncomingWebHookData(jsonString, castleSignature, key string) (string,
 	}
 	if verifySignature {
 		if len(castleSignature) == 0 {
-			return "", "", errors.New("castleSignature invalid, got: " + castleSignature)
+			return "", "", errors.New("castleSignature invalid")
 		}
 	}
 	if len(key) == 0 {

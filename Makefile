@@ -3,6 +3,7 @@ EXE := castle-gdpr-webhook
 CWD=$(shell pwd)
 
 ${EXE} : ${SRC}
+	go test
 	GOOS=linux go build
 
 deploy: ${EXE}
