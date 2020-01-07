@@ -1,4 +1,4 @@
-SRC := hook.go
+SRC := hook.go hook_test.go main.go
 EXE := castle-gdpr-webhook
 CWD=$(shell pwd)
 

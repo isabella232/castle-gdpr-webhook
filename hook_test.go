@@ -91,59 +91,80 @@ var missingUrl = `
 
 func Test_HandleIncomingWebHookData(t *testing.T) {
 
-	url, err := handleIncomingWebHookData("", "", "")
+	url, userId, err := HandleIncomingWebHookData("", "", "")
 	if err.Error() != "lenght of jsonString is 0" {
-		t.Errorf("handleIncomingWebHookData failed handle invalid data")
+		t.Errorf("HandleIncomcomingWebHookData failed handle invalid data")
 	}
 	if len(url) != 0 {
-		t.Errorf("handleIncomingWebHookData failed handle invalid data")
+		t.Errorf("HandleIncomcomingWebHookData failed handle invalid data")
+	}
+	if len(userId) != 0 {
+		t.Errorf("HandleIncomcomingWebHookData failed handle invalid data")
 	}
 
-	url, err = handleIncomingWebHookData(correctJson, "", "")
+	url, userId, err = HandleIncomingWebHookData(correctJson, "", "")
 	if err.Error() != "castleSignature invalid" {
-		t.Errorf("handleIncomingWebHookData failed handle invalid data")
+		t.Errorf("HandleIncomcomingWebHookData failed handle invalid data")
 	}
 	if len(url) != 0 {
-		t.Errorf("handleIncomingWebHookData failed handle invalid data")
+		t.Errorf("HandleIncomcomingWebHookData failed handle invalid data")
+	}
+	if len(userId) != 0 {
+		t.Errorf("HandleIncomcomingWebHookData failed handle invalid data")
 	}
 
-	url, err = handleIncomingWebHookData(correctJson, "0123", "")
+	url, userId, err = HandleIncomingWebHookData(correctJson, "0123", "")
 	if err.Error() != "hmac key invalid" {
-		t.Errorf("handleIncomingWebHookData failed handle invalid data")
+		t.Errorf("HandleIncomcomingWebHookData failed handle invalid data")
 	}
 	if len(url) != 0 {
-		t.Errorf("handleIncomingWebHookData failed handle invalid data")
+		t.Errorf("HandleIncomcomingWebHookData failed handle invalid data")
+	}
+	if len(userId) != 0 {
+		t.Errorf("HandleIncomcomingWebHookData failed handle invalid data")
 	}
 
-	url, err = handleIncomingWebHookData(correctJson, "DSgTD4h47B0IexVVMCcbyG1T80LDnFmgiYXWqEmu/gI=", "i'm a secret")
+	url, userId, err = HandleIncomingWebHookData(correctJson, "DSgTD4h47B0IexVVMCcbyG1T80LDnFmgiYXWqEmu/gI=", "i'm a secret")
 	if err != nil {
-		t.Errorf("handleIncomingWebHookData failed handle return valid url: " + err.Error())
+		t.Errorf("HandleIncomcomingWebHookData failed handle return valid url: " + err.Error())
 	}
 	if url != "https://url/user.zip" {
-		t.Errorf("handleIncomingWebHookData failed handle return valid url: " + url)
+		t.Errorf("HandleIncomcomingWebHookData failed handle return valid url: " + url)
+	}
+	if userId != "2" {
+		t.Errorf("HandleIncomcomingWebHookData failed handle invalid data")
 	}
 
-	url, err = handleIncomingWebHookData(incorrectApiVersion, "7Yphb6NozJKjusGldNPcMqTr1/bfiCxaduIHTWFrcf8=", "i'm a secret")
+	url, userId, err = HandleIncomingWebHookData(incorrectApiVersion, "7Yphb6NozJKjusGldNPcMqTr1/bfiCxaduIHTWFrcf8=", "i'm a secret")
 	if err.Error() != "invalid API version: v4" {
-		t.Errorf("handleIncomingWebHookData failed handle invalid data")
+		t.Errorf("HandleIncomcomingWebHookData failed handle invalid data")
 	}
 	if len(url) != 0 {
-		t.Errorf("handleIncomingWebHookData failed handle invalid data")
+		t.Errorf("HandleIncomcomingWebHookData failed handle invalid data")
+	}
+	if len(userId) != 0 {
+		t.Errorf("HandleIncomcomingWebHookData failed handle invalid data")
 	}
 
-	url, err = handleIncomingWebHookData(incorrectType, "0vef8YEJPUMgIBCHzqRx7y1fjM8hhPpI9YScECt4acM=", "i'm a secret")
+	url, userId, err = HandleIncomingWebHookData(incorrectType, "0vef8YEJPUMgIBCHzqRx7y1fjM8hhPpI9YScECt4acM=", "i'm a secret")
 	if err.Error() != "invalid type: hello" {
-		t.Errorf("handleIncomingWebHookData failed handle invalid data")
+		t.Errorf("HandleIncomcomingWebHookData failed handle invalid data")
 	}
 	if len(url) != 0 {
-		t.Errorf("handleIncomingWebHookData failed handle invalid data")
+		t.Errorf("HandleIncomcomingWebHookData failed handle invalid data")
+	}
+	if len(userId) != 0 {
+		t.Errorf("HandleIncomcomingWebHookData failed handle invalid data")
 	}
 
-	url, err = handleIncomingWebHookData(missingUrl, "FHcazuyhgx0oNzQiG7L5f+G4/XeoqYnqABvf/AqfrmQ=", "i'm a secret")
+	url, userId, err = HandleIncomingWebHookData(missingUrl, "FHcazuyhgx0oNzQiG7L5f+G4/XeoqYnqABvf/AqfrmQ=", "i'm a secret")
 	if err.Error() != "empty download url" {
-		t.Errorf("handleIncomingWebHookData failed handle invalid data")
+		t.Errorf("HandleIncomcomingWebHookData failed handle invalid data")
 	}
 	if len(url) != 0 {
-		t.Errorf("handleIncomingWebHookData failed handle invalid data")
+		t.Errorf("HandleIncomcomingWebHookData failed handle invalid data")
+	}
+	if len(userId) != 0 {
+		t.Errorf("HandleIncomcomingWebHookData failed handle invalid data")
 	}
 }

@@ -1,0 +1,18 @@
+
+{
+	"api_version": "v1",
+	"app_id": "3823955555537961",
+	"type": "$gdpr.subject_access_request.completed",
+	"created_at": "2019-12-01T19:38:28.483Z",
+	"data": {
+		"id": "test",
+		"download_url": "https://ooola.github.com/demo.html",
+		"download_url_expires_at": "2020-12-12T00:00.00Z",
+		"user_id": "userID0x123",
+		"user_traits": {
+			"id": "2",
+			"email": "email@example.com"
+		}
+	}
+}
+

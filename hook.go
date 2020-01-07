@@ -1,144 +1,132 @@
 package main
 
 import (
-	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"github.com/aws/aws-lambda-go/events"
-	"github.com/aws/aws-lambda-go/lambda"
-	"github.com/aws/aws-lambda-go/lambdacontext"
-	"log"
-)
+	/*
+		"log"
+		"os"
+		"testing"
+	*/)
 
-type MyEvent struct {
-	Name string `json:"name"`
+type GdprSar struct {
+	ApiVersion string `json:"api_version"`
+	AppId      string `json:"app_id"`
+	Type       string `json:"type"`
+	CreatedAt  string `json:"created_at"`
+	Data       Data   `json:"data"`
 }
 
-type MyResponse struct {
-	Message string `json:"Answer:"`
+type Data struct {
+	Id                   string     `json:"id"`
+	DownloadUrl          string     `json:"download_url"`
+	DownloadUrlExpiresAt string     `json:"download_url_expires_at"`
+	UserId               string     `json:"user_id"`
+	UserTraits           UserTraits `json:"user_traits"`
 }
 
-// BodyRequest is our self-made struct to process JSON request from Client
-type BodyRequest struct {
-	RequestName string `json:"name"`
+type UserTraits struct {
+	Id    string `json:"id"`
+	Email string `json:"email"`
 }
 
-// BodyResponse is our self-made struct to build response for Client
-type BodyResponse struct {
-	ResponseName string `json:"name"`
-}
-
-// Handler function Using AWS Lambda Proxy Request
-// from https://github.com/serverless/examples/blob/master/aws-golang-http-get-post/postFolder/postExample.go
-func ServerlessCallback(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-
-	// BodyRequest will be used to take the json response from client and build it
-	bodyRequest := BodyRequest{
-		RequestName: "",
+var validJson = `
+{
+	"api_version": "v1",
+	"app_id": "3823955555537961",
+	"type": "$gdpr.subject_access_request.completed",
+	"created_at": "2019-12-01T19:38:28.483Z",
+	"data": {
+		"id": "test",
+		"download_url": "https://url/user.zip",
+		"download_url_expires_at": "2020-12-12T00:00.00Z",
+		"user_id": "2",
+		"user_traits": {
+			"id": "2",
+			"email": "email@example.com"
+		}
 	}
+}
+`
 
-	// Unmarshal the json, return 404 if error
-	err := json.Unmarshal([]byte(request.Body), &bodyRequest)
+// verifies the webhook by computing the HMAC SHA256 signature of the payload
+// message and key are both string however messageMAC is a base64 encoded string
+// see castle docs for explanation
+func verifyWebhookMAC(message, messageMAC, key string) bool {
+	mac := hmac.New(sha256.New, []byte(key))
+	mac.Write([]byte(message))
+	expectedMAC := mac.Sum(nil)
+
+	// the messageMAC is base64 encoded to we have to decode itours as well
+	messageMACbytes, err := base64.StdEncoding.DecodeString(messageMAC)
 	if err != nil {
-		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 404}, nil
+		fmt.Println("error:", err)
+		return false
+	}
+	fmt.Printf("HMac of %sexpected: %s computed: %s\n", message, string(expectedMAC), string(messageMACbytes))
+	return hmac.Equal(messageMACbytes, expectedMAC)
+}
+
+// processes the incoming webhook data, checks the signature and the api conforms to the expected format
+// is successful returns the url of the GDPR SAR and the user_id
+func HandleIncomingWebHookData(jsonString, castleSignature, key string) (string, string, error) {
+	verifySignature := false // TODO: figure out how to pass custom header via API Gateway
+	if len(jsonString) == 0 {
+		return "", "", errors.New("lenght of jsonString is 0")
+	}
+	if verifySignature {
+		if len(castleSignature) == 0 {
+			return "", "", errors.New("castleSignature invalid, got: " + castleSignature)
+		}
+	}
+	if len(key) == 0 {
+		return "", "", errors.New("hmac key invalid")
 	}
 
-	// We will build the BodyResponse and send it back in json form
-	bodyResponse := BodyResponse{
-		ResponseName: bodyRequest.RequestName + " LastName",
+	if verifySignature {
+
+		// first check the signature
+		if verifyWebhookMAC(jsonString, castleSignature, key) == false {
+			return "", "", errors.New("hmac invalid")
+		}
 	}
 
-	// Marshal the response into json bytes, if error return 404
-	response, err := json.Marshal(&bodyResponse)
+	b := []byte(jsonString)
+	var sar GdprSar
+	err := json.Unmarshal(b, &sar)
 	if err != nil {
-		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 404}, nil
+		return "", "", err
 	}
 
-	//Returning response with AWS Lambda Proxy Response
-	return events.APIGatewayProxyResponse{Body: string(response), StatusCode: 200}, nil
-}
+	fmt.Printf("%+v\n", sar)
 
-// Handler function Using AWS Lambda Proxy Request
-// https://github.com/serverless/examples/blob/master/aws-golang-http-get-post/getFolder/getExample.go
-func ServerlessGetHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-
-	//Get the path parameter that was sent
-	//name := request.PathParameters["name"]
-	name := request.Path
-
-	//Generate message that want to be sent as body
-	message := fmt.Sprintf(" { \"Message\" : \"Hello %s \" } ", name)
-
-	//Returning response with AWS Lambda Proxy Response
-	return events.APIGatewayProxyResponse{Body: message, StatusCode: 200}, nil
-}
-
-func HandleCallback(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	message := fmt.Sprintf(" { \"Message\" : \"Not Yet Implemented\" } ")
-	return events.APIGatewayProxyResponse{Body: message, StatusCode: 200}, nil
-}
-
-//var userRequest = regex.MustCompile(`/users/[^/]+/`)
-
-func HandleAllRequests(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	//name := request.PathParameters["name"]
-	switch path := request.Path; path {
-	case "/callback":
-		return HandleCallback(request)
-	default:
-		log.Printf("No such route: %s", path)
-		message := fmt.Sprintf("{ \"Message\" : \"No such route %s\" }", path)
-		return events.APIGatewayProxyResponse{Body: message, StatusCode: 404}, nil
+	if sar.ApiVersion != "v1" {
+		return "", "", errors.New("invalid API version: " + sar.ApiVersion)
 	}
-	return events.APIGatewayProxyResponse{Body: "...", StatusCode: 404}, nil
-}
 
-func HandleCallbackOrg(ctx context.Context, name MyEvent) (MyResponse, error) {
-	lc, _ := lambdacontext.FromContext(ctx)
-	log.Print(lc.Identity.CognitoIdentityPoolID)
-	log.Print(lc)
-	return MyResponse{Message: fmt.Sprintf("Hello %s, context: %+v!", name.Name, lc)}, nil
-	//return MyResponse{Message: fmt.Sprintf("Weewaa %s!", name.Name)}, nil
+	if sar.Type != "$gdpr.subject_access_request.completed" {
+		return "", "", errors.New("invalid type: " + sar.Type)
+	}
 
+	if len(sar.Data.DownloadUrl) == 0 {
+		return "", "", errors.New("empty download url")
+	}
+	return sar.Data.DownloadUrl, sar.Data.UserId, nil
 }
 
 /*
+func main() {
+	b := []byte(validJson)
+	var s GdprSar
+	err := json.Unmarshal(b, &s)
+	if err != nil {
+		fmt.Printf("internal error, validJson not valid: %s", err.Error())
+	}
 
-func HandleRequest(ctx context.Context, name MyEvent) (MyResponse, error) {
-	lc, _ := lambdacontext.FromContext(ctx)
-	log.Print(lc.Identity.CognitoIdentityPoolID)
-	log.Print(lc)
-	//return MyResponse{Message: fmt.Sprintf("Hello %s, %+v!", name.Name, lc)}, nil
-	return MyResponse{Message: fmt.Sprintf("Weewaa %s!", name.Name)}, nil}
+	fmt.Printf("%+v\n", s)
 }
 */
-
-// downloads the file
-func downloadFile(filepath string, url string) error {
-
-	// Get the data
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	// Create the file
-	out, err := os.Create(filepath)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	// Write the body to file
-	_, err = io.Copy(out, resp.Body)
-	return err
-}
-
-func main() {
-	//lambda.Start(HandleRequest)
-	//lambda.Start(HandleCallback)
-	//lambda.Start(ServerlessGetHandler)
-	//lambda.Start(ServerlessCallback)
-	lambda.Start(HandleAllRequests)
-}
