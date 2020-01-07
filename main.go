@@ -17,26 +17,24 @@ import (
 
 var region = aws.String("us-west-2")
 var bucket = aws.String("castle-gdpr-user-data")
+var keyname = "/hermes/dev/castle/api_secret"
 var secret = "secret"
 
 // downloads a url to file
 func DownloadFile(filepath, url string) error {
 
-	// Get the data
 	resp, err := http.Get(url)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	// Create the file
 	out, err := os.Create(filepath)
 	if err != nil {
 		return err
 	}
 	defer out.Close()
 
-	// Write the body to file
 	_, err = io.Copy(out, resp.Body)
 	return err
 }
@@ -50,7 +48,6 @@ func UploadFileToS3(bucket, filename, localfile string) error {
 
 	file, err := os.Open(localfile)
 	if err != nil {
-		// handle error
 		log.Printf("unable to open localfile: %s\n", localfile)
 		return err
 	}
@@ -100,6 +97,29 @@ func saveRequestBody(request events.APIGatewayProxyRequest) {
 	}
 }
 
+// reads the HMac secret, a secure string, from the ssm
+func getHMacSecret() string {
+	/*
+		sess, err := session.NewSession(&aws.Config{
+			Region: region},
+		)
+		if err != nil {
+			panic(err)
+		}
+
+		ssmsvc := ssm.New(sess, aws.NewConfig().WithRegion(region)
+		withDecryption := true
+		param, err := ssmsvc.GetParameter(&ssm.GetParameterInput{
+			Name:           &keyname,
+			WithDecryption: &withDecryption,
+		})
+
+		value := *param.Parameter.Value
+		return value
+	*/
+	return secret
+}
+
 func HandleAllRequests(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	log.Printf("HandleAllRequests called with path: %s\n", request.Path)
 
@@ -108,8 +128,10 @@ func HandleAllRequests(request events.APIGatewayProxyRequest) (events.APIGateway
 
 	saveRequestBody(request)
 
+	hmacSecret := getHMacSecret()
+
 	// in golang all headers are lowercase
-	sarDataUrl, userId, err := HandleIncomingWebHookData(request.Body, request.Headers["x-castle-signature"], secret)
+	sarDataUrl, userId, err := HandleIncomingWebHookData(request.Body, request.Headers["x-castle-signature"], hmacSecret)
 	if err != nil {
 		fmt.Printf("HandleIncomingWebHookData err: %s\n", err.Error())
 		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
