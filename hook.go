@@ -34,47 +34,29 @@ type UserTraits struct {
 	Email string `json:"email"`
 }
 
-var validJson = `
-{
-	"api_version": "v1",
-	"app_id": "3823955555537961",
-	"type": "$gdpr.subject_access_request.completed",
-	"created_at": "2019-12-01T19:38:28.483Z",
-	"data": {
-		"id": "test",
-		"download_url": "https://url/user.zip",
-		"download_url_expires_at": "2020-12-12T00:00.00Z",
-		"user_id": "2",
-		"user_traits": {
-			"id": "2",
-			"email": "email@example.com"
-		}
-	}
-}
-`
-
 // verifies the webhook by computing the HMAC SHA256 signature of the payload
-// message and key are both string however messageMAC is a base64 encoded string
+// message and key are both strings however messageMAC is a base64 encoded string
 // see castle docs for explanation
-func verifyWebhookMAC(message, messageMAC, key string) bool {
+func verifyWebhookMAC(message, messageMACBase64, key string) bool {
 	mac := hmac.New(sha256.New, []byte(key))
 	mac.Write([]byte(message))
-	expectedMAC := mac.Sum(nil)
+	computedMAC := mac.Sum(nil)
 
-	// the messageMAC is base64 encoded to we have to decode itours as well
-	messageMACbytes, err := base64.StdEncoding.DecodeString(messageMAC)
+	// the messageMACBase64 is base64 encoded to we have to decode it
+	messageMAC, err := base64.StdEncoding.DecodeString(messageMACBase64)
 	if err != nil {
 		fmt.Println("error:", err)
 		return false
 	}
-	fmt.Printf("HMac of %sexpected: %s computed: %s\n", message, string(expectedMAC), string(messageMACbytes))
-	return hmac.Equal(messageMACbytes, expectedMAC)
+	messageMACB64 := base64.StdEncoding.EncodeToString(computedMAC)
+	fmt.Printf("HMac of %s expected: %s computed: %s\n", message, messageMACBase64, messageMACB64)
+	return hmac.Equal(messageMAC, computedMAC)
 }
 
 // processes the incoming webhook data, checks the signature and the api conforms to the expected format
 // is successful returns the url of the GDPR SAR and the user_id
 func HandleIncomingWebHookData(jsonString, castleSignature, key string) (string, string, error) {
-	verifySignature := false // TODO: figure out how to pass custom header via API Gateway
+	verifySignature := true // TODO: figure out how to pass custom header via API Gateway
 	if len(jsonString) == 0 {
 		return "", "", errors.New("lenght of jsonString is 0")
 	}
@@ -117,16 +99,3 @@ func HandleIncomingWebHookData(jsonString, castleSignature, key string) (string,
 	}
 	return sar.Data.DownloadUrl, sar.Data.UserId, nil
 }
-
-/*
-func main() {
-	b := []byte(validJson)
-	var s GdprSar
-	err := json.Unmarshal(b, &s)
-	if err != nil {
-		fmt.Printf("internal error, validJson not valid: %s", err.Error())
-	}
-
-	fmt.Printf("%+v\n", s)
-}
-*/

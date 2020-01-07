@@ -18,76 +18,7 @@ import (
 
 var region = aws.String("us-west-2")
 var bucket = aws.String("castle-gdpr-user-data")
-
-type MyEvent struct {
-	Name string `json:"name"`
-}
-
-type MyResponse struct {
-	Message string `json:"Answer:"`
-}
-
-// BodyRequest is our self-made struct to process JSON request from Client
-type BodyRequest struct {
-	RequestName string `json:"name"`
-}
-
-// BodyResponse is our self-made struct to build response for Client
-type BodyResponse struct {
-	ResponseName string `json:"name"`
-}
-
-// Handler function Using AWS Lambda Proxy Request
-// from https://github.com/serverless/examples/blob/master/aws-golang-http-get-post/postFolder/postExample.go
-func ServerlessCallback(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-
-	// BodyRequest will be used to take the json response from client and build it
-	bodyRequest := BodyRequest{
-		RequestName: "",
-	}
-
-	// Unmarshal the json, return 404 if error
-	err := json.Unmarshal([]byte(request.Body), &bodyRequest)
-	if err != nil {
-		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 404}, nil
-	}
-
-	// We will build the BodyResponse and send it back in json form
-	bodyResponse := BodyResponse{
-		ResponseName: bodyRequest.RequestName + " LastName",
-	}
-
-	// Marshal the response into json bytes, if error return 404
-	response, err := json.Marshal(&bodyResponse)
-	if err != nil {
-		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 404}, nil
-	}
-
-	//Returning response with AWS Lambda Proxy Response
-	return events.APIGatewayProxyResponse{Body: string(response), StatusCode: 200}, nil
-}
-
-// Handler function Using AWS Lambda Proxy Request
-// https://github.com/serverless/examples/blob/master/aws-golang-http-get-post/getFolder/getExample.go
-func ServerlessGetHandler(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-
-	//Get the path parameter that was sent
-	//name := request.PathParameters["name"]
-	name := request.Path
-
-	//Generate message that want to be sent as body
-	message := fmt.Sprintf(" { \"Message\" : \"Hello %s \" } ", name)
-
-	//Returning response with AWS Lambda Proxy Response
-	return events.APIGatewayProxyResponse{Body: message, StatusCode: 200}, nil
-}
-
-func HandleCallback(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
-	message := fmt.Sprintf(" { \"Message\" : \"Not Yet Implemented\" } ")
-	return events.APIGatewayProxyResponse{Body: message, StatusCode: 200}, nil
-}
-
-//var userRequest = regex.MustCompile(`/users/[^/]+/`)
+var secret = "secret"
 
 // downloads a url to file
 func DownloadFile(filepath, url string) error {
@@ -111,6 +42,7 @@ func DownloadFile(filepath, url string) error {
 	return err
 }
 
+// uploads the specified localfile to the filename in the S3 bucket
 func UploadFileToS3(bucket, filename, localfile string) error {
 	sess, _ := session.NewSession(&aws.Config{
 		Region: region},
@@ -151,12 +83,34 @@ func UploadFileToS3(bucket, filename, localfile string) error {
 	return nil
 }
 
+// save the request body so that it can be inspected, this is mainly for debugging
+func saveRequestBody(request events.APIGatewayProxyRequest) {
+	tmpfile, err := ioutil.TempFile("/tmp", "request.*.tmp")
+	if err != nil {
+		log.Printf("saveRequest failed to make tempfile err: %s\n", err.Error())
+	}
+	tmpfile.Write([]byte(request.Body))
+	tmpfile.Close()
+	name := tmpfile.Name()
+
+	log.Printf("Wrote saved request to: %s\n", name)
+
+	err = UploadFileToS3(*bucket, "request.tmp", name)
+	if err != nil {
+		log.Printf("saveRequest failed to request Body to s3: %s\n", err.Error())
+	}
+}
+
 func HandleAllRequests(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
 	log.Printf("HandleAllRequests called with path: %s\n", request.Path)
 
-	log.Printf("HandleAllRequests called with body: %s castleSignature: %s\n", request.Body, request.Headers["X-Castle-Signature"])
+	log.Printf("HandleAllRequests called with body: %s castleSignature: %s\n", request.Body, request.Headers["x-castle-signature"])
+	log.Printf("HandleAllRequests request: %+v\n", request.Headers)
 
-	sarDataUrl, userId, err := HandleIncomingWebHookData(request.Body, request.Headers["X-Castle-Signature"], "i'm a secret")
+	saveRequestBody(request)
+
+	// in golang all headers are lowercase
+	sarDataUrl, userId, err := HandleIncomingWebHookData(request.Body, request.Headers["x-castle-signature"], secret)
 	if err != nil {
 		fmt.Printf("HandleIncomingWebHookData err: %s\n", err.Error())
 		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
@@ -175,7 +129,6 @@ func HandleAllRequests(request events.APIGatewayProxyRequest) (events.APIGateway
 		fmt.Printf("HandleIncomingWebHookData failed to download sar data: %s\n", err.Error())
 		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
 	}
-	// s3location
 
 	err = UploadFileToS3(*bucket, userId+".zip", name)
 	if err != nil {
