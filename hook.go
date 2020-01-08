@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	/*
 		"log"
 		"os"
@@ -49,7 +50,7 @@ func verifyWebhookMAC(message, messageMACBase64, key string) bool {
 		return false
 	}
 	messageMACB64 := base64.StdEncoding.EncodeToString(computedMAC)
-	fmt.Printf("HMac of %s expected: %s computed: %s\n", message, messageMACBase64, messageMACB64)
+	log.Printf("HMac of %s expected: %s computed: %s\n", message, messageMACBase64, messageMACB64)
 	return hmac.Equal(messageMAC, computedMAC)
 }
 

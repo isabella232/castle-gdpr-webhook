@@ -31,3 +31,30 @@ aws-okta exec DANGER-security -- aws iam get-role --role-name lambda-castle-gdpr
 ```
 
 TODO describe granting access to the S3 bucket.
+
+Allow reading from the SSM, TODO: replace with actual policy
+
+```
+arn:aws:iam::987056895854:role/lambda-castle-gdpr-webhook
+
+
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ssm:DescribeParameters"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ssm:GetParameters"
+            ],
+            "Resource": "arn:aws:ssm:us-west-2:987056895854:parameter/hermes/prod/castle/api_secret"
+        }
+    ]
+}
+```

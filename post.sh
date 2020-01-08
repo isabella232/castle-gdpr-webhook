@@ -22,6 +22,6 @@
 #    --data-binary @request.txt \
 #    -H 'Content-Type: application/json' -H 'X-Castle-Signature: DFDUtWGUuoTW8o4uViH78bCVDrSvcdbhsoqC0uYOH0w='
 
-curl -v "https://uj05s8dbk7.execute-api.us-west-2.amazonaws.com/test/callback" \
+curl -v "https://castlewebhook-test.optimizely.com/v1/callback" \
     --data-binary @test.json \
     -H 'X-Castle-Signature: DFDUtWGUuoTW8o4uViH78bCVDrSvcdbhsoqC0uYOH0w='

@@ -8,6 +8,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/ssm"
 	"io"
 	"io/ioutil"
 	"log"
@@ -17,8 +18,7 @@ import (
 
 var region = aws.String("us-west-2")
 var bucket = aws.String("castle-gdpr-user-data")
-var keyname = "/hermes/dev/castle/api_secret"
-var secret = "secret"
+var keyname = "/hermes/prod/castle/api_secret"
 
 // downloads a url to file
 func DownloadFile(filepath, url string) error {
@@ -99,25 +99,28 @@ func saveRequestBody(request events.APIGatewayProxyRequest) {
 
 // reads the HMac secret, a secure string, from the ssm
 func getHMacSecret() string {
-	/*
-		sess, err := session.NewSession(&aws.Config{
-			Region: region},
-		)
-		if err != nil {
-			panic(err)
-		}
+	sess, err := session.NewSession(&aws.Config{
+		Region: region},
+	)
+	if err != nil {
+		fmt.Printf("getHMacSecret: failed to create session: %s\n", err.Error())
+		return ""
+	}
 
-		ssmsvc := ssm.New(sess, aws.NewConfig().WithRegion(region)
-		withDecryption := true
-		param, err := ssmsvc.GetParameter(&ssm.GetParameterInput{
-			Name:           &keyname,
-			WithDecryption: &withDecryption,
-		})
+	ssmsvc := ssm.New(sess, aws.NewConfig().WithRegion(*region))
+	withDecryption := true
+	param, err := ssmsvc.GetParameter(&ssm.GetParameterInput{
+		Name:           &keyname,
+		WithDecryption: &withDecryption,
+	})
+	if err != nil {
+		fmt.Printf("getHMacSecret: failed to read %s error: %s\n", keyname, err.Error())
+		return ""
+	}
+	//log.Printf("param: %+v\n", param)
 
-		value := *param.Parameter.Value
-		return value
-	*/
-	return secret
+	value := *param.Parameter.Value
+	return value
 }
 
 func HandleAllRequests(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {
@@ -128,10 +131,19 @@ func HandleAllRequests(request events.APIGatewayProxyRequest) (events.APIGateway
 
 	saveRequestBody(request)
 
+	signature := request.Headers["x-castle-signature"] // curl sets the headers this way
+	if len(signature) == 0 {
+		signature = request.Headers["X-Castle-Signature"] // how it comes from Castle
+		if len(signature) == 0 {
+			fmt.Printf("HandleIncomingWebHookData err: no x-castle-signature specified\n")
+			return events.APIGatewayProxyResponse{Body: "", StatusCode: 500}, nil
+		}
+	}
+
 	hmacSecret := getHMacSecret()
 
 	// in golang all headers are lowercase
-	sarDataUrl, userId, err := HandleIncomingWebHookData(request.Body, request.Headers["x-castle-signature"], hmacSecret)
+	sarDataUrl, userId, err := HandleIncomingWebHookData(request.Body, signature, hmacSecret)
 	if err != nil {
 		fmt.Printf("HandleIncomingWebHookData err: %s\n", err.Error())
 		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
