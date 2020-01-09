@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	/*
 		"log"
@@ -46,7 +45,7 @@ func verifyWebhookMAC(message, messageMACBase64, key string) bool {
 	// the messageMACBase64 is base64 encoded to we have to decode it
 	messageMAC, err := base64.StdEncoding.DecodeString(messageMACBase64)
 	if err != nil {
-		fmt.Println("error:", err)
+		log.Println("error:", err)
 		return false
 	}
 	messageMACB64 := base64.StdEncoding.EncodeToString(computedMAC)
@@ -57,25 +56,18 @@ func verifyWebhookMAC(message, messageMACBase64, key string) bool {
 // processes the incoming webhook data, checks the signature and the api conforms to the expected format
 // is successful returns the url of the GDPR SAR and the user_id
 func HandleIncomingWebHookData(jsonString, castleSignature, key string) (string, string, error) {
-	verifySignature := true // TODO: figure out how to pass custom header via API Gateway
 	if len(jsonString) == 0 {
 		return "", "", errors.New("lenght of jsonString is 0")
 	}
-	if verifySignature {
-		if len(castleSignature) == 0 {
-			return "", "", errors.New("castleSignature invalid")
-		}
+	if len(castleSignature) == 0 {
+		return "", "", errors.New("castleSignature invalid")
 	}
 	if len(key) == 0 {
 		return "", "", errors.New("hmac key invalid")
 	}
 
-	if verifySignature {
-
-		// first check the signature
-		if verifyWebhookMAC(jsonString, castleSignature, key) == false {
-			return "", "", errors.New("hmac invalid")
-		}
+	if verifyWebhookMAC(jsonString, castleSignature, key) == false {
+		return "", "", errors.New("hmac invalid")
 	}
 
 	b := []byte(jsonString)
@@ -85,7 +77,7 @@ func HandleIncomingWebHookData(jsonString, castleSignature, key string) (string,
 		return "", "", err
 	}
 
-	fmt.Printf("%+v\n", sar)
+	log.Printf("%+v\n", sar)
 
 	if sar.ApiVersion != "v1" {
 		return "", "", errors.New("invalid API version: " + sar.ApiVersion)
