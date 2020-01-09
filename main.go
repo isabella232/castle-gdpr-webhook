@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/aws/aws-lambda-go/events"
 	"github.com/aws/aws-lambda-go/lambda"
 	"github.com/aws/aws-sdk-go/aws"
@@ -103,7 +102,7 @@ func getHMacSecret() string {
 		Region: region},
 	)
 	if err != nil {
-		fmt.Printf("getHMacSecret: failed to create session: %s\n", err.Error())
+		log.Printf("getHMacSecret: failed to create session: %s\n", err.Error())
 		return ""
 	}
 
@@ -114,7 +113,7 @@ func getHMacSecret() string {
 		WithDecryption: &withDecryption,
 	})
 	if err != nil {
-		fmt.Printf("getHMacSecret: failed to read %s error: %s\n", keyname, err.Error())
+		log.Printf("getHMacSecret: failed to read %s error: %s\n", keyname, err.Error())
 		return ""
 	}
 	//log.Printf("param: %+v\n", param)
@@ -135,23 +134,22 @@ func HandleAllRequests(request events.APIGatewayProxyRequest) (events.APIGateway
 	if len(signature) == 0 {
 		signature = request.Headers["X-Castle-Signature"] // how it comes from Castle
 		if len(signature) == 0 {
-			fmt.Printf("HandleIncomingWebHookData err: no x-castle-signature specified\n")
+			log.Printf("HandleIncomingWebHookData err: no x-castle-signature specified\n")
 			return events.APIGatewayProxyResponse{Body: "", StatusCode: 500}, nil
 		}
 	}
 
 	hmacSecret := getHMacSecret()
 
-	// in golang all headers are lowercase
 	sarDataUrl, userId, err := HandleIncomingWebHookData(request.Body, signature, hmacSecret)
 	if err != nil {
-		fmt.Printf("HandleIncomingWebHookData err: %s\n", err.Error())
+		log.Printf("HandleIncomingWebHookData err: %s\n", err.Error())
 		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
 	}
 
 	tmpfile, err := ioutil.TempFile("/tmp", "castlegdpr."+userId+".*.zip")
 	if err != nil {
-		fmt.Printf("HandleIncomingWebHookData failed to make tempfile err: %s\n", err.Error())
+		log.Printf("HandleIncomingWebHookData failed to make tempfile err: %s\n", err.Error())
 		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
 	}
 	tmpfile.Close()
@@ -159,13 +157,13 @@ func HandleAllRequests(request events.APIGatewayProxyRequest) (events.APIGateway
 
 	err = DownloadFile(name, sarDataUrl)
 	if err != nil {
-		fmt.Printf("HandleIncomingWebHookData failed to download sar data: %s\n", err.Error())
+		log.Printf("HandleIncomingWebHookData failed to download sar data: %s\n", err.Error())
 		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
 	}
 
 	err = UploadFileToS3(*bucket, userId+".zip", name)
 	if err != nil {
-		fmt.Printf("HandleIncomingWebHookData failed to upload sar data to s3: %s\n", err.Error())
+		log.Printf("HandleIncomingWebHookData failed to upload sar data to s3: %s\n", err.Error())
 		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
 	}
 
