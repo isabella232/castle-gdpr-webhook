@@ -1,10 +1,30 @@
 {
-	"Version": "2012-10-17",
-	"Statement": {
-  		"Effect": "Allow",
-  		"Principal": {
-    		"Service": "lambda.amazonaws.com"
-  		},
-  		"Action": "sts:AssumeRole"
-	}
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:ListAllMyBuckets",
+                "s3:GetBucketLocation"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": "s3:*",
+            "Resource": [
+                "arn:aws:s3:::castle-gdpr-user-data",
+                "arn:aws:s3:::castle-gdpr-user-data/*"
+            ]
+        },
+        {
+            "Sid": "AllowCastleHookToReadParameters",
+            "Effect": "Allow",
+            "Action": [
+                "ssm:Get*",
+                "ssm:DescribeParameters"
+            ],
+            "Resource": "arn:aws:ssm:us-west-2:987056895854:parameter/hermes/prod/castle/*"
+        }
+    ]
 }
