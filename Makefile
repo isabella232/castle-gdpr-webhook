@@ -2,7 +2,7 @@ SRC := hook.go hook_test.go main.go
 EXE := castle-gdpr-webhook
 ZIP := function.zip
 CWD=$(shell pwd)
-AWS_ACCOUNT := DANGER-security
+AWS_ACCOUNT := DANGER-dw
 
 ${EXE} : ${SRC}
 	go test
@@ -31,7 +31,7 @@ create-function: ${EXE}
 		--runtime go1.x \
   		--zip-file fileb://${ZIP} \
 	       	--handler ${EXE} \
-  		--role arn:aws:iam::987056895854:role/lambda-castle-gdpr-webhook \
+  		--role arn:aws:iam::873344020507:role/lambda-castle-gdpr-webhook \
 		--region us-west-2
 clean:
 	rm -rf ${EXE} ${ZIP}

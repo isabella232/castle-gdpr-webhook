@@ -1,0 +1,38 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ssm:Get*",
+                "ssm:DescribeParameters"
+            ],
+            "Resource": "arn:aws:ssm:us-east-1:873344020507:parameter/hermes/prod/castle/*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:ListAllMyBuckets",
+                "s3:GetBucketLocation"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": "s3:*",
+            "Resource": [
+                "arn:aws:s3:::castle-gdpr-data",
+                "arn:aws:s3:::castle-gdpr-data/*"
+            ]
+        },
+        {
+            "Sid": "AllowUsageRDSDWPRDKey",
+            "Effect": "Allow",
+            "Action": [
+                "kms:ListAliases",
+                "kms:Decrypt"
+            ],
+            "Resource": "arn:aws:kms:us-east-1:873344020507:key/9bb5702a-c9db-45cf-98bb-85bac4ef4a74"
+        }
+    ]
+}
