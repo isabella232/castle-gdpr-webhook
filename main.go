@@ -17,6 +17,7 @@ import (
 
 var region = aws.String("us-west-2")
 var bucket = aws.String("castle-gdpr-user-data")
+var keyregion = aws.String("us-east-1")
 var keyname = "/hermes/prod/castle/api_secret"
 
 // downloads a url to file
@@ -99,7 +100,7 @@ func saveRequestBody(request events.APIGatewayProxyRequest) {
 // reads the HMac secret, a secure string, from the ssm
 func getHMacSecret() string {
 	sess, err := session.NewSession(&aws.Config{
-		Region: region},
+		Region: keyregion},
 	)
 	if err != nil {
 		log.Printf("getHMacSecret: failed to create session: %s\n", err.Error())
