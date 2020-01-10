@@ -107,7 +107,7 @@ func getHMacSecret() string {
 		return ""
 	}
 
-	ssmsvc := ssm.New(sess, aws.NewConfig().WithRegion(*region))
+	ssmsvc := ssm.New(sess, aws.NewConfig().WithRegion(*keyregion))
 	withDecryption := true
 	param, err := ssmsvc.GetParameter(&ssm.GetParameterInput{
 		Name:           &keyname,
