@@ -116,7 +116,6 @@ func getHMacSecret() string {
 		log.Printf("getHMacSecret: failed to read %s error: %s\n", keyname, err.Error())
 		return ""
 	}
-	//log.Printf("param: %+v\n", param)
 
 	value := *param.Parameter.Value
 	return value
@@ -127,8 +126,6 @@ func HandleAllRequests(request events.APIGatewayProxyRequest) (events.APIGateway
 
 	log.Printf("HandleAllRequests called with body: %s castleSignature: %s\n", request.Body, request.Headers["x-castle-signature"])
 	log.Printf("HandleAllRequests request: %+v\n", request.Headers)
-
-	saveRequestBody(request)
 
 	signature := request.Headers["x-castle-signature"] // curl sets the headers this way
 	if len(signature) == 0 {
