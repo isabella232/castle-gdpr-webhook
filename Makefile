@@ -2,36 +2,60 @@ SRC := hook.go hook_test.go main.go
 EXE := castle-gdpr-webhook
 ZIP := function.zip
 CWD=$(shell pwd)
-AWS_ACCOUNT := DANGER-dw
+TEST_AWS_ACCOUNT ?= DANGER-security
+TEST_AWS_ACCOUNT_ID ?= 987056895854
+PRODUCTION_AWS_ACCOUNT ?= DANGER-dw
+PRODUCTION_AWS_ACCOUNT_ID ?= 873344020507
+
+default: ${EXE}
 
 ${EXE} : ${SRC}
 	go test
 	GOOS=linux go build
 
-deploy: ${EXE}
+.PHONY: deploy-production
+deploy-production: ${EXE}
+	@echo "Deploying to ${PRODUCTION_AWS_ACCOUNT} account id ${PRODUCTION_AWS_ACCOUNT_ID}"
 	zip function.zip ${EXE}
-	aws-okta exec ${AWS_ACCOUNT} -- aws lambda update-function-code \
+	aws-okta exec ${PRODUCTION_AWS_ACCOUNT} -- aws lambda update-function-code \
 	       	--function-name ${EXE} \
   		--zip-file fileb://${ZIP} \
 		--region us-west-2
 
-test:
-	aws-okta exec ${AWS_ACCOUNT} -- aws lambda invoke \
+.PHONY: deploy-test
+deploy-test: ${EXE}
+	@echo "Deploying to ${TEST_AWS_ACCOUNT} account id ${TEST_AWS_ACCOUNT_ID}"
+	zip function.zip ${EXE}
+	aws-okta exec ${TEST_AWS_ACCOUNT} -- aws lambda update-function-code \
+	       	--function-name ${EXE} \
+  		--zip-file fileb://${ZIP} \
+		--region us-west-2
+
+.PHONY: invoke-lambda 
+invoke-lambda:
+	@echo "Invoking lambda directly"
+	aws-okta exec ${TEST_AWS_ACCOUNT} -- aws lambda invoke \
 		--function-name ${EXE} \
 		--invocation-type "RequestResponse" \
 		--region us-west-2 \
 		response.txt
-	cat response.txt
+	@echo "response.txt contains"
+	@cat response.txt
 
 # this only has to be done once
+.PHONY: create-function
 create-function: ${EXE}
+	@echo "Creating function in ${PRODUCTION_AWS_ACCOUNT} account id ${PRODUCTION_AWS_ACCOUNT_ID}"
 	zip function.zip ${EXE}
-	aws-okta exec ${AWS_ACCOUNT} -- aws lambda create-function \
+	aws-okta exec ${PRODUCTION_AWS_ACCOUNT} -- aws lambda create-function \
 	       	--function-name ${EXE} \
 		--runtime go1.x \
   		--zip-file fileb://${ZIP} \
 	       	--handler ${EXE} \
-  		--role arn:aws:iam::873344020507:role/lambda-castle-gdpr-webhook \
+  		--role arn:aws:iam::${PRODUCTION_AWS_ACCOUNT_ID}:role/lambda-castle-gdpr-webhook \
 		--region us-west-2
+
+.PHONY: clean
 clean:
+	go clean
 	rm -rf ${EXE} ${ZIP}
