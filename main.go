@@ -16,7 +16,7 @@ import (
 )
 
 var region = aws.String("us-west-2")
-var bucket = aws.String("castle-gdpr-user-data")
+var bucket = aws.String("castle-gdpr-data")
 var keyregion = aws.String("us-east-1")
 var keyname = "/hermes/prod/castle/api_secret"
 
