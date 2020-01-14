@@ -169,5 +169,10 @@ func HandleAllRequests(request events.APIGatewayProxyRequest) (events.APIGateway
 }
 
 func main() {
+
+	if len(os.Getenv("S3BUCKET")) != 0 {
+		log.Printf("setting s3 bucket to: %s\n", os.Getenv("S3BUCKET"))
+		*bucket = os.Getenv("S3BUCKET")
+	}
 	lambda.Start(HandleAllRequests)
 }
