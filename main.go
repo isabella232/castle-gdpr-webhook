@@ -162,7 +162,7 @@ func HandleAllRequests(request events.APIGatewayProxyRequest) (events.APIGateway
 
 	err = UploadFileToS3(*bucket, userId+".zip", name)
 	if err != nil {
-		log.Printf("HandleIncomingWebHookData failed to upload sar data to s3: %s\n", err.Error())
+		log.Printf("HandleIncomingWebHookData failed to upload sar data to s3 bucket: %s error %s\n", *bucket, err.Error())
 		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
 	}
 
