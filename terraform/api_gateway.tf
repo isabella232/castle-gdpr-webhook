@@ -1,6 +1,6 @@
 resource "aws_api_gateway_rest_api" "example" {
-  name        = "ServerlessExample"
-  description = "Terraform Serverless Application Example"
+  name        = "Castle GDPR Webhook"
+  description = "Webhook that is invoked by Castle.io to download GDPR data"
 }
 
 resource "aws_api_gateway_resource" "proxy" {
