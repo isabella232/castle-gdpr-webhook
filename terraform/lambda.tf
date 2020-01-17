@@ -8,7 +8,7 @@ variable "lambda_function_name" {
   default = "CastleHandler"
 }
 
-resource "aws_lambda_function" "example" {
+resource "aws_lambda_function" "castle_webhook" {
   function_name = "${var.lambda_function_name}"
 
 	filename="../function.zip"
@@ -32,7 +32,7 @@ resource "aws_lambda_function" "example" {
 resource "aws_lambda_permission" "apigw" {
   statement_id  = "AllowAPIGatewayInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = aws_lambda_function.example.function_name
+  function_name = aws_lambda_function.castle_webhook.function_name
   principal     = "apigateway.amazonaws.com"
 
   # The "/*/*" portion grants access from any method on any resource
