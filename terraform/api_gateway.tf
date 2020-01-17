@@ -29,7 +29,7 @@ resource "aws_api_gateway_integration" "lambda" {
 resource "aws_api_gateway_method" "proxy_root" {
   rest_api_id   = aws_api_gateway_rest_api.castle_gdpr_webhook.id
   resource_id   = aws_api_gateway_rest_api.castle_gdpr_webhook.root_resource_id
-  http_method   = "ANY"
+  http_method   = "POST"
   authorization = "NONE"
 }
 
@@ -50,7 +50,7 @@ resource "aws_api_gateway_deployment" "castle_gdpr_webhook" {
   ]
 
   rest_api_id = aws_api_gateway_rest_api.castle_gdpr_webhook.id
-  stage_name  = "production"
+  stage_name  = "v1"
 }
 
 # this prints the base URL after terraform apply to simplify testing
