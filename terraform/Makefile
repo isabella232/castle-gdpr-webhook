@@ -15,3 +15,7 @@ apply:
 .PHONY: output
 output:
 	aws-okta exec ${AWS_ACCOUNT} -- terraform output
+
+.PHONY: fmt
+fmt:
+	aws-okta exec ${AWS_ACCOUNT} -- terraform fmt
