@@ -9,7 +9,6 @@ variable "lambda_function_name" {
 }
 
 resource "aws_lambda_function" "example" {
-	#function_name = "CastleHandler"
   function_name = "${var.lambda_function_name}"
 
 	filename="../function.zip"
@@ -26,9 +25,8 @@ resource "aws_lambda_function" "example" {
       HMACSECRET = "ssshhh..."
     }
   }
-	## OLA TODO give permissions for S3
-	depends_on = ["aws_iam_role_policy_attachment.lambda_logs", "aws_cloudwatch_log_group.example"]
-	#depends_on = [aws_cloudwatch_log_group.example]
+
+	depends_on = ["aws_iam_role_policy_attachment.lambda_logs", "aws_iam_role_policy_attachment.gdpr_s3_bucket", "aws_cloudwatch_log_group.example"]
 }
 
 resource "aws_lambda_permission" "apigw" {
@@ -104,3 +102,37 @@ resource "aws_iam_role_policy_attachment" "lambda_logs" {
 	#policy_arn = "aws_iam_policy.lambda_exec.arn"
 }
 
+resource "aws_iam_policy" "gdpr_s3_bucket_write_policy" {
+	name = "gdpr_s3_bucket_write_policy"
+  path = "/"
+  description = "IAM policy for to allow GDPR Handler to write to S3 bucket"
+
+	policy = <<EOF
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:ListAllMyBuckets",
+                "s3:GetBucketLocation"
+            ],
+            "Resource": "*"
+        },
+        {
+            "Effect": "Allow",
+            "Action": "s3:*",
+            "Resource": [
+                "arn:aws:s3:::castle-gdpr-user-data",
+                "arn:aws:s3:::castle-gdpr-user-data/*"
+            ]
+        }
+    ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "gdpr_s3_bucket" {
+	role = "${aws_iam_role.iam_for_lambda.name}"
+	policy_arn = "${aws_iam_policy.gdpr_s3_bucket_write_policy.arn}"
+}
