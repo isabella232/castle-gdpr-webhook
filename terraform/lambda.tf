@@ -106,8 +106,8 @@ resource "aws_iam_policy" "gdpr_s3_bucket_write_policy" {
             "Effect": "Allow",
             "Action": "s3:*",
             "Resource": [
-                "arn:aws:s3:::castle-gdpr-user-data",
-                "arn:aws:s3:::castle-gdpr-user-data/*"
+                "arn:aws:s3:::${var.s3bucket}",
+                "arn:aws:s3:::${var.s3bucket}/*"
             ]
         }
     ]
