@@ -1,21 +1,28 @@
-AWS_ACCOUNT ?= DANGER-security
+check-env:
+ifndef AWS_ACCOUNT
+	$(error AWS_ACCOUNT is undefined)
+endif
 
 .PHONY: plan
-plan:
-	aws-okta exec ${AWS_ACCOUNT} -- terraform plan
+plan: check-env
+	aws-okta exec ${AWS_ACCOUNT} -- terraform $@
 
 .PHONY: validate 
-validate:
-	aws-okta exec ${AWS_ACCOUNT} -- terraform validate 
+validate: check-env
+	aws-okta exec ${AWS_ACCOUNT} -- terraform $@
 
 .PHONY: apply
-apply:
-	aws-okta exec ${AWS_ACCOUNT} -- terraform apply
+apply: check-env
+	aws-okta exec ${AWS_ACCOUNT} -- terraform $@
+
+.PHONY: destroy
+destroy: check-env
+	aws-okta exec ${AWS_ACCOUNT} -- terraform $@
 
 .PHONY: output
-output:
-	aws-okta exec ${AWS_ACCOUNT} -- terraform output
+output: check-env
+	aws-okta exec ${AWS_ACCOUNT} -- terraform $@
 
 .PHONY: fmt
-fmt:
-	aws-okta exec ${AWS_ACCOUNT} -- terraform fmt
+fmt: check-env
+	aws-okta exec ${AWS_ACCOUNT} -- terraform $@
