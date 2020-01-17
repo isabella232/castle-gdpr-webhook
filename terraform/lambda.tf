@@ -35,8 +35,7 @@ resource "aws_lambda_permission" "apigw" {
   function_name = aws_lambda_function.castle_webhook.function_name
   principal     = "apigateway.amazonaws.com"
 
-  # The "/*/*" portion grants access from any method on any resource
-  # within the API Gateway REST API.
+  # See https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-control-access-using-iam-policies-to-invoke-api.html
   source_arn = "${aws_api_gateway_rest_api.castle_gdpr_webhook.execution_arn}/*/*"
 }
 
@@ -66,7 +65,7 @@ EOF
 # If skipping this resource configuration, also add "logs:CreateLogGroup" to the IAM policy below.
 resource "aws_cloudwatch_log_group" "castle_gdpr_webhook" {
   name              = "/aws/lambda/CastleHandler"
-  retention_in_days = 14
+  retention_in_days = 30
 }
 
 # See also the following AWS managed policy: AWSLambdaBasicExecutionRole
