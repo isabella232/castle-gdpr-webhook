@@ -179,17 +179,15 @@ func main() {
 
 	// hmacSecret is set to empty string, main_test.go does set the value to avoid the lookup
 	if len(hmacSecret) == 0 {
-		log.Printf("hmacSecret is : %s\n", hmacSecret)
 		if len(os.Getenv("HMACSECRET")) != 0 {
-			log.Printf("HMACSECRET environment variable available using it\n")
+			log.Printf("HMACSECRET environment variable available, using it\n")
 			hmacSecret = os.Getenv("HMACSECRET")
-			log.Printf("hmacSecret is : %s\n", hmacSecret)
 		} else {
 			log.Printf("HMACSECRET environment variable not set, attempting to fetch it from SSM Parameter Store\n")
-			hmacSecret := getHMacSecret()
-			if len(hmacSecret) == 0 {
-				panic("no HMAC Secret available, exiting")
-			}
+			hmacSecret = getHMacSecret()
+		}
+		if len(hmacSecret) == 0 {
+			panic("no HMAC Secret available, exiting")
 		}
 	}
 	lambda.Start(HandleAllRequests)
