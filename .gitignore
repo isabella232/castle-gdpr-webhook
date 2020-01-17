@@ -7,3 +7,12 @@ users/castle-gdpr-users
 users/response.txt
 .DS_Store
 .envrc
+
+# Local .terraform directories
+**/.terraform/*
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+
+terraform/output.txt
