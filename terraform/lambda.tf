@@ -6,7 +6,7 @@ resource "aws_lambda_function" "castle_webhook" {
   handler = "castle-gdpr-webhook"
   runtime = "go1.x"
 
-  role = aws_iam_role.iam_for_lambda.arn
+  role = aws_iam_role.castle_webhook_lambda_role.arn
 
   environment {
     variables = {
@@ -29,7 +29,7 @@ resource "aws_lambda_permission" "apigw" {
 }
 
 # IAM role which dictates what other AWS services the Lambda function may access.
-resource "aws_iam_role" "iam_for_lambda" {
+resource "aws_iam_role" "castle_webhook_lambda_role" {
   name = "castle_webhook_lambda_role"
 
   assume_role_policy = <<EOF
@@ -81,7 +81,7 @@ EOF
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_logs" {
-  role       = "${aws_iam_role.iam_for_lambda.name}"
+  role       = "${aws_iam_role.castle_webhook_lambda_role.name}"
   policy_arn = "${aws_iam_policy.lambda_logging.arn}"
 }
 
@@ -117,7 +117,7 @@ EOF
 }
 
 resource "aws_iam_role_policy_attachment" "gdpr_s3_bucket" {
-  role       = "${aws_iam_role.iam_for_lambda.name}"
+  role       = "${aws_iam_role.castle_webhook_lambda_role.name}"
   policy_arn = "${aws_iam_policy.gdpr_s3_bucket_write_policy.arn}"
 }
 
