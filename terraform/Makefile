@@ -4,6 +4,10 @@ AWS_ACCOUNT ?= DANGER-security
 plan:
 	aws-okta exec ${AWS_ACCOUNT} -- terraform plan
 
+.PHONY: validate 
+validate:
+	aws-okta exec ${AWS_ACCOUNT} -- terraform validate 
+
 .PHONY: apply
 apply:
 	aws-okta exec ${AWS_ACCOUNT} -- terraform apply
