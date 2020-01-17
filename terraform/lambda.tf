@@ -65,7 +65,7 @@ EOF
 # If skipping this resource configuration, also add "logs:CreateLogGroup" to the IAM policy below.
 resource "aws_cloudwatch_log_group" "castle_gdpr_webhook" {
   name              = "/aws/lambda/CastleHandler"
-  retention_in_days = 30
+  retention_in_days = 90
 }
 
 # See also the following AWS managed policy: AWSLambdaBasicExecutionRole
