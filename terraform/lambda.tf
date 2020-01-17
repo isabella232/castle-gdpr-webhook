@@ -126,9 +126,15 @@ resource "aws_iam_policy" "gdpr_s3_bucket_write_policy" {
     ]
 }
 EOF
+	depends_on = ["aws_s3_bucket.bucket_for_files"]
 }
 
 resource "aws_iam_role_policy_attachment" "gdpr_s3_bucket" {
 	role = "${aws_iam_role.iam_for_lambda.name}"
 	policy_arn = "${aws_iam_policy.gdpr_s3_bucket_write_policy.arn}"
+}
+
+resource "aws_s3_bucket" "bucket_for_files" {
+  bucket = "castle-gdpr-user-data"
+  acl    = "private"
 }
