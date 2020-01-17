@@ -7,6 +7,8 @@ HMAC=`cat $JSON | openssl dgst -binary -sha256 -hmac "$HMAC_SECRET" | openssl ba
 
 echo "Calling the API endpoint. Make sure HMAC_SECRET is set in your environment."
 
+echo "curl \"$URL\" --data-binary @${JSON} -H \"X-Castle-Signature: $HMAC\""
+
 curl "$URL" --data-binary @${JSON} -H "X-Castle-Signature: $HMAC"
 if [ $? -eq 0 ]; then
     echo "call succeeded 😀"
