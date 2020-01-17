@@ -26,7 +26,7 @@ resource "aws_lambda_function" "castle_webhook" {
     }
   }
 
-	depends_on = ["aws_iam_role_policy_attachment.lambda_logs", "aws_iam_role_policy_attachment.gdpr_s3_bucket", "aws_cloudwatch_log_group.example"]
+	depends_on = ["aws_iam_role_policy_attachment.lambda_logs", "aws_iam_role_policy_attachment.gdpr_s3_bucket", "aws_cloudwatch_log_group.castle_gdpr_webhook"]
 }
 
 resource "aws_lambda_permission" "apigw" {
@@ -37,7 +37,7 @@ resource "aws_lambda_permission" "apigw" {
 
   # The "/*/*" portion grants access from any method on any resource
   # within the API Gateway REST API.
-  source_arn = "${aws_api_gateway_rest_api.example.execution_arn}/*/*"
+  source_arn = "${aws_api_gateway_rest_api.castle_gdpr_webhook.execution_arn}/*/*"
 }
 
 # IAM role which dictates what other AWS services the Lambda function
@@ -64,7 +64,7 @@ EOF
 
 # This is to optionally manage the CloudWatch Log Group for the Lambda Function.
 # If skipping this resource configuration, also add "logs:CreateLogGroup" to the IAM policy below.
-resource "aws_cloudwatch_log_group" "example" {
+resource "aws_cloudwatch_log_group" "castle_gdpr_webhook" {
   name              = "/aws/lambda/CastleHandler"
   retention_in_days = 14
 }
@@ -94,12 +94,8 @@ EOF
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_logs" {
-	#role = "aws_iam_role.iam_for_lambda.name"
 	role = "${aws_iam_role.iam_for_lambda.name}"
 	policy_arn = "${aws_iam_policy.lambda_logging.arn}"
-
-	#role = "serverless_example_lambda"
-	#policy_arn = "aws_iam_policy.lambda_exec.arn"
 }
 
 resource "aws_iam_policy" "gdpr_s3_bucket_write_policy" {

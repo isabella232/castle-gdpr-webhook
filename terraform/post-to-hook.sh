@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # get the url via `terraform output`
-URL="https://eq53ky15j0.execute-api.us-west-2.amazonaws.com/test"
+URL=`make output | grep base_url | awk -F '=' '{print $2}' | awk '{$1=$1};1'`
 JSON="../test.json"
 HMAC=`cat $JSON | openssl dgst -binary -sha256 -hmac "$HMAC_SECRET" | openssl base64`
 
