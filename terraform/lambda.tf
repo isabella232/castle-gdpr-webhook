@@ -1,32 +1,21 @@
-provider "aws" {
-  profile    = "default"
-  region     = "us-west-2"
-}
-
-variable "lambda_function_name" {
-  description = "The name of the lambda function"
-  default = "CastleHandler"
-}
-
 resource "aws_lambda_function" "castle_webhook" {
   function_name = "${var.lambda_function_name}"
 
-	filename="../function.zip"
+  filename = "../function.zip"
 
   handler = "castle-gdpr-webhook"
   runtime = "go1.x"
 
   role = aws_iam_role.iam_for_lambda.arn
 
-	environment {
+  environment {
     variables = {
-			S3BUCKET = "castle-gdpr-user-data"
-			# these are for testing only
-      HMACSECRET = "ssshhh..."
+      S3BUCKET   = "${var.s3bucket}"
+      HMACSECRET = "${var.hmac_secret}"
     }
   }
 
-	depends_on = ["aws_iam_role_policy_attachment.lambda_logs", "aws_iam_role_policy_attachment.gdpr_s3_bucket", "aws_cloudwatch_log_group.castle_gdpr_webhook"]
+  depends_on = ["aws_iam_role_policy_attachment.lambda_logs", "aws_iam_role_policy_attachment.gdpr_s3_bucket", "aws_cloudwatch_log_group.castle_gdpr_webhook"]
 }
 
 resource "aws_lambda_permission" "apigw" {
@@ -39,8 +28,7 @@ resource "aws_lambda_permission" "apigw" {
   source_arn = "${aws_api_gateway_rest_api.castle_gdpr_webhook.execution_arn}/*/*"
 }
 
-# IAM role which dictates what other AWS services the Lambda function
-# may access.
+# IAM role which dictates what other AWS services the Lambda function may access.
 resource "aws_iam_role" "iam_for_lambda" {
   name = "iam_for_lambda"
 
@@ -70,8 +58,8 @@ resource "aws_cloudwatch_log_group" "castle_gdpr_webhook" {
 
 # See also the following AWS managed policy: AWSLambdaBasicExecutionRole
 resource "aws_iam_policy" "lambda_logging" {
-  name = "lambda_logging"
-  path = "/"
+  name        = "lambda_logging"
+  path        = "/"
   description = "IAM policy for logging from a lambda"
 
   policy = <<EOF
@@ -93,16 +81,16 @@ EOF
 }
 
 resource "aws_iam_role_policy_attachment" "lambda_logs" {
-	role = "${aws_iam_role.iam_for_lambda.name}"
-	policy_arn = "${aws_iam_policy.lambda_logging.arn}"
+  role       = "${aws_iam_role.iam_for_lambda.name}"
+  policy_arn = "${aws_iam_policy.lambda_logging.arn}"
 }
 
 resource "aws_iam_policy" "gdpr_s3_bucket_write_policy" {
-	name = "gdpr_s3_bucket_write_policy"
-  path = "/"
+  name        = "gdpr_s3_bucket_write_policy"
+  path        = "/"
   description = "IAM policy for to allow GDPR Handler to write to S3 bucket"
 
-	policy = <<EOF
+  policy     = <<EOF
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -125,12 +113,12 @@ resource "aws_iam_policy" "gdpr_s3_bucket_write_policy" {
     ]
 }
 EOF
-	depends_on = ["aws_s3_bucket.bucket_for_files"]
+  depends_on = ["aws_s3_bucket.bucket_for_files"]
 }
 
 resource "aws_iam_role_policy_attachment" "gdpr_s3_bucket" {
-	role = "${aws_iam_role.iam_for_lambda.name}"
-	policy_arn = "${aws_iam_policy.gdpr_s3_bucket_write_policy.arn}"
+  role       = "${aws_iam_role.iam_for_lambda.name}"
+  policy_arn = "${aws_iam_policy.gdpr_s3_bucket_write_policy.arn}"
 }
 
 resource "aws_s3_bucket" "bucket_for_files" {
