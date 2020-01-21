@@ -16,3 +16,4 @@ users/response.txt
 *.tfstate.*
 
 terraform/output.txt
+graph.svg

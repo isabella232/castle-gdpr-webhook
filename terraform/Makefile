@@ -26,3 +26,7 @@ output: check-env
 .PHONY: fmt
 fmt: check-env
 	aws-okta exec ${AWS_ACCOUNT} -- terraform $@
+
+.PHONY: graph
+graph: check-env
+	aws-okta exec ${AWS_ACCOUNT} -- terraform $@ | dot -Tsvg > graph.svg
