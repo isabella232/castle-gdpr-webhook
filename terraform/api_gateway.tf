@@ -53,6 +53,25 @@ resource "aws_api_gateway_deployment" "castle_gdpr_webhook" {
   stage_name  = "v1"
 }
 
+# ensure the path mapping is setup, e.g. "v1"
+resource "aws_api_gateway_base_path_mapping" "test" {
+  api_id      = "${aws_api_gateway_rest_api.castle_gdpr_webhook.id}"
+  stage_name  = "${aws_api_gateway_deployment.castle_gdpr_webhook.stage_name}"
+  domain_name = "${aws_api_gateway_domain_name.castlewebhook_test.domain_name}"
+	base_path   = "v1"
+}
+
+# setup the custom domain name
+resource "aws_api_gateway_domain_name" "castlewebhook_test" {
+  domain_name              = "castlewebhook-test.optimizely.com"
+	security_policy					 = "TLS_1_2"
+  regional_certificate_arn = "${var.cert_arn}"
+
+  endpoint_configuration {
+    types = ["REGIONAL"]
+  }
+}
+
 # this prints the base URL after terraform apply to simplify testing
 output "base_url" {
   value = aws_api_gateway_deployment.castle_gdpr_webhook.invoke_url
