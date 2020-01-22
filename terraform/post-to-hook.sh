@@ -25,10 +25,3 @@ echo ""
 echo "To proceed run the following:"
 echo "curl \"$URL\" --data-binary @${JSON} -H \"X-Castle-Signature: $HMAC\""
 echo ""
-#
-#curl "$URL" --data-binary @${JSON} -H "X-Castle-Signature: $HMAC"
-#if [ $? -eq 0 ]; then
-#    echo "call succeeded 😀"
-#else
-#    echo "call failed 😱"
-#fi
