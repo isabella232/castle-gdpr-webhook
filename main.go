@@ -17,8 +17,11 @@ import (
 
 var region = aws.String("us-west-2")
 var bucket = aws.String("castle-gdpr-data")
+
+// the keyname is read in production, in testing set the HMACSECRET environment variable
 var keyregion = aws.String("us-east-1")
 var keyname = "/hermes/prod/castle/api_secret"
+var hmacSecret string
 
 // downloads a url to file
 func DownloadFile(filepath, url string) error {
@@ -137,8 +140,6 @@ func HandleAllRequests(request events.APIGatewayProxyRequest) (events.APIGateway
 		}
 	}
 
-	hmacSecret := getHMacSecret()
-
 	sarDataUrl, userId, err := HandleIncomingWebHookData(request.Body, signature, hmacSecret)
 	if err != nil {
 		log.Printf("HandleIncomingWebHookData err: %s\n", err.Error())
@@ -161,7 +162,7 @@ func HandleAllRequests(request events.APIGatewayProxyRequest) (events.APIGateway
 
 	err = UploadFileToS3(*bucket, userId+".zip", name)
 	if err != nil {
-		log.Printf("HandleIncomingWebHookData failed to upload sar data to s3: %s\n", err.Error())
+		log.Printf("HandleIncomingWebHookData failed to upload sar data to s3 bucket: %s error %s\n", *bucket, err.Error())
 		return events.APIGatewayProxyResponse{Body: err.Error(), StatusCode: 500}, nil
 	}
 
@@ -169,10 +170,25 @@ func HandleAllRequests(request events.APIGatewayProxyRequest) (events.APIGateway
 }
 
 func main() {
-
 	if len(os.Getenv("S3BUCKET")) != 0 {
-		log.Printf("setting s3 bucket to: %s\n", os.Getenv("S3BUCKET"))
+		log.Printf("S3BUCKET environment variable available, setting s3 bucket to: %s\n", os.Getenv("S3BUCKET"))
 		*bucket = os.Getenv("S3BUCKET")
+	} else {
+		log.Printf("Using default S3BUCKET: %s\n", *bucket)
+	}
+
+	// hmacSecret is set to empty string, main_test.go does set the value to avoid the lookup
+	if len(hmacSecret) == 0 {
+		if len(os.Getenv("HMACSECRET")) != 0 {
+			log.Printf("HMACSECRET environment variable available, using it\n")
+			hmacSecret = os.Getenv("HMACSECRET")
+		} else {
+			log.Printf("HMACSECRET environment variable not set, attempting to fetch it from SSM Parameter Store\n")
+			hmacSecret = getHMacSecret()
+		}
+		if len(hmacSecret) == 0 {
+			panic("no HMAC Secret available, exiting")
+		}
 	}
 	lambda.Start(HandleAllRequests)
 }

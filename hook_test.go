@@ -4,7 +4,12 @@ import (
 	"testing"
 )
 
+func setSecret() {
+	hmacSecret = "ssshhh..."
+}
+
 func Test_VerifyWebhookMAC(t *testing.T) {
+	setSecret()
 	if verifyWebhookMAC("0123456789", "/L2TBNCvuNaUKLzH/6/A+NYVzPuhWv5jQpGEN219MUo=", "i'm a secret") != true {
 		t.Errorf("verifyWebhookMAC failed to return true for valid hmac")
 	}
@@ -90,6 +95,7 @@ var missingUrl = `
 `
 
 func Test_HandleIncomingWebHookData(t *testing.T) {
+	setSecret()
 
 	url, userId, err := HandleIncomingWebHookData("", "", "")
 	if err.Error() != "lenght of jsonString is 0" {
