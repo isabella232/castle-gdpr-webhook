@@ -122,6 +122,6 @@ resource "aws_iam_role_policy_attachment" "gdpr_s3_bucket" {
 }
 
 resource "aws_s3_bucket" "bucket_for_files" {
-  bucket = "castle-gdpr-user-data"
+  bucket = "${var.s3bucket}"
   acl    = "private"
 }
