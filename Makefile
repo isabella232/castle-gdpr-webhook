@@ -6,6 +6,9 @@ TEST_AWS_ACCOUNT ?= DANGER-security
 TEST_AWS_ACCOUNT_ID ?= 987056895854
 PRODUCTION_AWS_ACCOUNT ?= DANGER-dw
 PRODUCTION_AWS_ACCOUNT_ID ?= 873344020507
+VERSION=1.0.0
+S3_BUCKET="castle-gdpr-webhook-releases"
+S3_KEY="castle-gdpr-webhook-${VERSION}.zip"
 
 # this must match terrafrom
 FUNCTION_NAME=CastleHandler 
@@ -15,23 +18,28 @@ default: ${EXE}
 ${EXE} : ${SRC}
 	go test
 	GOOS=linux go build
+	zip function.zip ${EXE}
+
+.PHONY: upload
+upload: ${EXE}
+	@echo "Uploading binary to account: ${PRODUCTION_AWS_ACCOUNT} bucket: ${S3_BUCKET} key: ${S3_KEY}"
+	aws-okta exec ${PRODUCTION_AWS_ACCOUNT} -- aws s3 cp ${ZIP} s3://${S3_BUCKET}/${S3_KEY}
 
 .PHONY: deploy-production
 deploy-production: ${EXE}
 	@echo "Deploying to ${PRODUCTION_AWS_ACCOUNT} account id ${PRODUCTION_AWS_ACCOUNT_ID}"
-	zip function.zip ${EXE}
 	aws-okta exec ${PRODUCTION_AWS_ACCOUNT} -- aws lambda update-function-code \
 	       	--function-name ${EXE} \
-  		--zip-file fileb://${ZIP} \
-		--region us-west-2
+		--s3-bucket ${S3_BUCKET} \
+		--s3-key ${S3_KEY} \
+		--region us-east-1
 
 .PHONY: deploy-test
 deploy-test: ${EXE}
 	@echo "Deploying to ${TEST_AWS_ACCOUNT} account id ${TEST_AWS_ACCOUNT_ID}"
-	zip function.zip ${EXE}
 	aws-okta exec ${TEST_AWS_ACCOUNT} -- aws lambda update-function-code \
 	       	--function-name ${FUNCTION_NAME} \
-  		--zip-file fileb://${ZIP} \
+		--zip-file fileb://${ZIP} \
 		--region us-west-2
 
 .PHONY: invoke-lambda 
@@ -49,7 +57,6 @@ invoke-lambda:
 .PHONY: create-function
 create-function: ${EXE}
 	@echo "Creating function in ${PRODUCTION_AWS_ACCOUNT} account id ${PRODUCTION_AWS_ACCOUNT_ID}"
-	zip function.zip ${EXE}
 	aws-okta exec ${PRODUCTION_AWS_ACCOUNT} -- aws lambda create-function \
 	       	--function-name ${EXE} \
 		--runtime go1.x \
