@@ -32,7 +32,7 @@ deploy-production: ${EXE}
 	       	--function-name ${EXE} \
 		--s3-bucket ${S3_BUCKET} \
 		--s3-key ${S3_KEY} \
-		--region us-east-1
+		--region us-west-2
 
 .PHONY: deploy-test
 deploy-test: ${EXE}

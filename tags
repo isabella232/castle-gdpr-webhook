@@ -1,0 +1,100 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+.PHONY	./Makefile	/^.PHONY: clean$/;"	t
+.PHONY	./Makefile	/^.PHONY: create-function$/;"	t
+.PHONY	./Makefile	/^.PHONY: deploy-production$/;"	t
+.PHONY	./Makefile	/^.PHONY: deploy-test$/;"	t
+.PHONY	./Makefile	/^.PHONY: invoke-lambda $/;"	t
+.PHONY	./terraform/Makefile	/^.PHONY: apply$/;"	t
+.PHONY	./terraform/Makefile	/^.PHONY: destroy$/;"	t
+.PHONY	./terraform/Makefile	/^.PHONY: fmt$/;"	t
+.PHONY	./terraform/Makefile	/^.PHONY: graph$/;"	t
+.PHONY	./terraform/Makefile	/^.PHONY: output$/;"	t
+.PHONY	./terraform/Makefile	/^.PHONY: plan$/;"	t
+.PHONY	./terraform/Makefile	/^.PHONY: validate $/;"	t
+Attach the role	./README.md	/^### Attach the role$/;"	k
+Build the API Gateway that will invoke the Lambda	./README.md	/^### Build the API Gateway that will invoke the Lambda$/;"	k
+CWD	./Makefile	/^CWD=$(shell pwd)$/;"	m
+Castle GDPR Webhook	./README.md	/^# Castle GDPR Webhook$/;"	h
+Create the Custom Domain Name	./README.md	/^### Create the Custom Domain Name$/;"	k
+Create the function	./README.md	/^### Create the function$/;"	k
+Create the role	./README.md	/^### Create the role$/;"	k
+Create the s3 bucket	./README.md	/^### Create the s3 bucket$/;"	k
+Data	./hook.go	/^type Data struct {$/;"	d
+DownloadFile	./main.go	/^func DownloadFile(filepath, url string) error {$/;"	d
+EXE	./Makefile	/^EXE := castle-gdpr-webhook$/;"	m
+FUNCTION_NAME	./Makefile	/^FUNCTION_NAME=CastleHandler $/;"	m
+GOOS	./Makefile	/^	GOOS=linux go build$/;"	m
+GdprSar	./hook.go	/^type GdprSar struct {$/;"	d
+HandleAllRequests	./main.go	/^func HandleAllRequests(request events.APIGatewayProxyRequest) (events.APIGatewayProxyResponse, error) {$/;"	d
+HandleIncomingWebHookData	./hook.go	/^func HandleIncomingWebHookData(jsonString, castleSignature, key string) (string, string, error) {$/;"	d
+PRODUCTION_AWS_ACCOUNT	./Makefile	/^PRODUCTION_AWS_ACCOUNT ?= DANGER-dw$/;"	m
+PRODUCTION_AWS_ACCOUNT_ID	./Makefile	/^PRODUCTION_AWS_ACCOUNT_ID ?= 873344020507$/;"	m
+SRC	./Makefile	/^SRC := hook.go hook_test.go main.go$/;"	m
+Setup	./README.md	/^## Setup$/;"	i
+TEST_AWS_ACCOUNT	./Makefile	/^TEST_AWS_ACCOUNT ?= DANGER-security$/;"	m
+TEST_AWS_ACCOUNT_ID	./Makefile	/^TEST_AWS_ACCOUNT_ID ?= 987056895854$/;"	m
+Test_HandleIncomingWebHookData	./hook_test.go	/^func Test_HandleIncomingWebHookData(t *testing.T) {$/;"	d
+Test_VerifyWebhookMAC	./hook_test.go	/^func Test_VerifyWebhookMAC(t *testing.T) {$/;"	d
+Update IAM Role	./README.md	/^### Update IAM Role$/;"	k
+UploadFileToS3	./main.go	/^func UploadFileToS3(bucket, filename, localfile string) error {$/;"	d
+UserTraits	./hook.go	/^type UserTraits struct {$/;"	d
+Verify that the function can be called	./README.md	/^### Verify that the function can be called$/;"	k
+Verify the role	./README.md	/^### Verify the role$/;"	k
+ZIP	./Makefile	/^ZIP := function.zip$/;"	m
+apply	./terraform/Makefile	/^apply: check-env$/;"	t
+aws_api_gateway_base_path_mapping test	./terraform/api_gateway.tf	/^resource "aws_api_gateway_base_path_mapping" "test" {$/;"	r
+aws_api_gateway_deployment castle_gdpr_webhook	./terraform/api_gateway.tf	/^resource "aws_api_gateway_deployment" "castle_gdpr_webhook" {$/;"	r
+aws_api_gateway_domain_name castlewebhook_test	./terraform/api_gateway.tf	/^resource "aws_api_gateway_domain_name" "castlewebhook_test" {$/;"	r
+aws_api_gateway_integration lambda	./terraform/api_gateway.tf	/^resource "aws_api_gateway_integration" "lambda" {$/;"	r
+aws_api_gateway_integration lambda_root	./terraform/api_gateway.tf	/^resource "aws_api_gateway_integration" "lambda_root" {$/;"	r
+aws_api_gateway_method proxy	./terraform/api_gateway.tf	/^resource "aws_api_gateway_method" "proxy" {$/;"	r
+aws_api_gateway_method proxy_root	./terraform/api_gateway.tf	/^resource "aws_api_gateway_method" "proxy_root" {$/;"	r
+aws_api_gateway_resource proxy	./terraform/api_gateway.tf	/^resource "aws_api_gateway_resource" "proxy" {$/;"	r
+aws_api_gateway_rest_api castle_gdpr_webhook	./terraform/api_gateway.tf	/^resource "aws_api_gateway_rest_api" "castle_gdpr_webhook" {$/;"	r
+aws_cloudwatch_log_group castle_gdpr_webhook	./terraform/lambda.tf	/^resource "aws_cloudwatch_log_group" "castle_gdpr_webhook" {$/;"	r
+aws_iam_policy gdpr_s3_bucket_write_policy	./terraform/lambda.tf	/^resource "aws_iam_policy" "gdpr_s3_bucket_write_policy" {$/;"	r
+aws_iam_policy lambda_logging	./terraform/lambda.tf	/^resource "aws_iam_policy" "lambda_logging" {$/;"	r
+aws_iam_role castle_webhook_lambda_role	./terraform/lambda.tf	/^resource "aws_iam_role" "castle_webhook_lambda_role" {$/;"	r
+aws_iam_role_policy_attachment gdpr_s3_bucket	./terraform/lambda.tf	/^resource "aws_iam_role_policy_attachment" "gdpr_s3_bucket" {$/;"	r
+aws_iam_role_policy_attachment lambda_logs	./terraform/lambda.tf	/^resource "aws_iam_role_policy_attachment" "lambda_logs" {$/;"	r
+aws_lambda_function castle_webhook	./terraform/lambda.tf	/^resource "aws_lambda_function" "castle_webhook" {$/;"	r
+aws_lambda_permission apigw	./terraform/lambda.tf	/^resource "aws_lambda_permission" "apigw" {$/;"	r
+aws_s3_bucket bucket_for_files	./terraform/lambda.tf	/^resource "aws_s3_bucket" "bucket_for_files" {$/;"	r
+base_url	./terraform/api_gateway.tf	/^output "base_url" {$/;"	o
+bucket	./main.go	/^var bucket = aws.String("castle-gdpr-data")$/;"	d
+cert_arn	./terraform/variables.tf	/^variable "cert_arn" {$/;"	v
+check-env	./terraform/Makefile	/^check-env:$/;"	t
+clean	./Makefile	/^clean:$/;"	t
+correctJson	./hook_test.go	/^var correctJson = `$/;"	d
+create-function	./Makefile	/^create-function: ${EXE}$/;"	t
+default	./Makefile	/^default: ${EXE}$/;"	t
+deploy-production	./Makefile	/^deploy-production: ${EXE}$/;"	t
+deploy-test	./Makefile	/^deploy-test: ${EXE}$/;"	t
+destroy	./terraform/Makefile	/^destroy: check-env$/;"	t
+fmt	./terraform/Makefile	/^fmt: check-env$/;"	t
+getHMacSecret	./main.go	/^func getHMacSecret() string {$/;"	d
+graph	./terraform/Makefile	/^graph: check-env$/;"	t
+hmacSecret	./main.go	/^var hmacSecret string$/;"	d
+hmac_secret	./terraform/variables.tf	/^variable "hmac_secret" {$/;"	v
+incorrectApiVersion	./hook_test.go	/^var incorrectApiVersion = `$/;"	d
+incorrectType	./hook_test.go	/^var incorrectType = `$/;"	d
+invoke-lambda	./Makefile	/^invoke-lambda:$/;"	t
+keyname	./main.go	/^var keyname = "\/hermes\/prod\/castle\/api_secret"$/;"	d
+keyregion	./main.go	/^var keyregion = aws.String("us-east-1")$/;"	d
+lambda_function_name	./terraform/variables.tf	/^variable "lambda_function_name" {$/;"	v
+main	./main.go	/^func main() {$/;"	d
+missingUrl	./hook_test.go	/^var missingUrl = `$/;"	d
+output	./terraform/Makefile	/^output: check-env$/;"	t
+plan	./terraform/Makefile	/^plan: check-env$/;"	t
+region	./main.go	/^var region = aws.String("us-west-2")$/;"	d
+s3bucket	./terraform/variables.tf	/^variable "s3bucket" {$/;"	v
+sar	./hook.go	/^	var sar GdprSar$/;"	d
+saveRequestBody	./main.go	/^func saveRequestBody(request events.APIGatewayProxyRequest) {$/;"	d
+setSecret	./hook_test.go	/^func setSecret() {$/;"	d
+validate	./terraform/Makefile	/^validate: check-env$/;"	t
+verifyWebhookMAC	./hook.go	/^func verifyWebhookMAC(message, messageMACBase64, key string) bool {$/;"	d
