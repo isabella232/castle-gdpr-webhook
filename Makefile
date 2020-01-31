@@ -7,7 +7,7 @@ TEST_AWS_ACCOUNT_ID ?= 987056895854
 PRODUCTION_AWS_ACCOUNT ?= DANGER-dw
 PRODUCTION_AWS_ACCOUNT_ID ?= 873344020507
 VERSION=1.0.0
-S3_BUCKET="castle-gdpr-webhook-releases"
+S3_BUCKET="castle-gdpr-releases"
 S3_KEY="castle-gdpr-webhook-${VERSION}.zip"
 
 # this must match terrafrom
