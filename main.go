@@ -15,7 +15,7 @@ import (
 	"os"
 )
 
-var region = aws.String("us-west-2")
+var region = aws.String("us-east-1")
 var bucket = aws.String("castle-gdpr-data")
 
 // the keyname is read in production, in testing set the HMACSECRET environment variable
