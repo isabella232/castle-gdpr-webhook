@@ -6,6 +6,7 @@ TEST_AWS_ACCOUNT ?= DANGER-security
 TEST_AWS_ACCOUNT_ID ?= 987056895854
 PRODUCTION_AWS_ACCOUNT ?= DANGER-dw
 PRODUCTION_AWS_ACCOUNT_ID ?= 873344020507
+PRODUCTION_AWS_REGION ?= us-east-1
 VERSION=1.0.0
 S3_BUCKET="castle-gdpr-releases"
 S3_KEY="castle-gdpr-webhook-${VERSION}.zip"
@@ -32,7 +33,7 @@ deploy-production: ${EXE}
 	       	--function-name ${EXE} \
 		--s3-bucket ${S3_BUCKET} \
 		--s3-key ${S3_KEY} \
-		--region us-west-2
+		--region ${PRODUCTION_AWS_REGION}
 
 .PHONY: deploy-test
 deploy-test: ${EXE}
@@ -63,7 +64,7 @@ create-function: ${EXE}
   		--zip-file fileb://${ZIP} \
 	       	--handler ${EXE} \
   		--role arn:aws:iam::${PRODUCTION_AWS_ACCOUNT_ID}:role/lambda-castle-gdpr-webhook \
-		--region us-west-2
+		--region ${PRODUCTION_AWS_REGION}
 
 .PHONY: clean
 clean:
